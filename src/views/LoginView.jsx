@@ -1,10 +1,9 @@
 // src/views/LoginView.jsx
 
 import React, { useState } from 'react'
-import { SCHOOL_CREDENTIALS } from '../lib/mockData'
 import { Input } from '../components/ui'
 
-export function LoginView({ onLogin }) {
+export function LoginView({ onLogin, onCreateSchool, schools }) {
   const [code, setCode] = useState('')
   const [pin,  setPin]  = useState('')
   const [err,  setErr]  = useState('')
@@ -12,10 +11,10 @@ export function LoginView({ onLogin }) {
 
   const handleSubmit = () => {
     const upperCode = code.trim().toUpperCase()
-    const creds = SCHOOL_CREDENTIALS[upperCode]
+    const creds = schools[upperCode]
 
     if (!code || !pin)  { setErr('Please enter your school code and PIN.'); return }
-    if (!creds)          { setErr('School code not recognised. Try MESA-ELEM.'); return }
+    if (!creds)          { setErr('School code not recognised. Check with your administrator.'); return }
 
     setLoading(true)
 
@@ -119,15 +118,20 @@ export function LoginView({ onLogin }) {
           </button>
         </div>
 
-        {/* Demo hint */}
-        <div style={{
-          marginTop: 24, padding: '12px 14px',
-          background: 'var(--bg)', borderRadius: 10,
-          border: '1px solid var(--border)',
-          fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', lineHeight: 1.8,
-        }}>
-          Staff&nbsp; → MESA-ELEM / 1234<br/>
-          Admin&nbsp; → MESA-ELEM / 9999
+        {/* New school link */}
+        <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <span style={{ fontSize: 13, color: 'var(--text-3)' }}>New to CarLine?&nbsp;</span>
+          <button
+            onClick={onCreateSchool}
+            style={{
+              background: 'none', border: 'none', padding: 0,
+              fontSize: 13, fontWeight: 600, color: 'var(--blue)',
+              cursor: 'pointer', fontFamily: 'var(--font-body)',
+              textDecoration: 'underline', textUnderlineOffset: 3,
+            }}
+          >
+            Set up your school
+          </button>
         </div>
       </div>
     </div>

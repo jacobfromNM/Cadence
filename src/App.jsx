@@ -16,14 +16,19 @@ import { RoleView } from './views/RoleView'
 import { StaffView } from './views/StaffView'
 import { TeacherView } from './views/TeacherView'
 import { AdminView } from './views/AdminView'
+import { SetupView } from './views/SetupView'
+import { SCHOOL_CREDENTIALS } from './lib/mockData'
 
 // Screen names match the role selected in RoleView
-// 'login' → 'role' → 'staff' | 'teacher' | 'admin'
+// 'login' → 'setup' | 'role' → 'staff' | 'teacher' | 'admin'
 
 export default function App() {
-  const [screen, setScreen]       = useState('login')
-  const [loginRole, setLoginRole] = useState(null)   // 'staff' | 'admin'
-  const [school, setSchool]       = useState(null)
+  const [screen, setScreen]             = useState('login')
+  const [loginRole, setLoginRole]       = useState(null)   // 'staff' | 'admin'
+  const [school, setSchool]             = useState(null)
+  const [customSchools, setCustomSchools] = useState({})   // schools created this session
+
+  const allSchools = { ...SCHOOL_CREDENTIALS, ...customSchools }
 
   const handleLogin = (role, schoolData) => {
     setLoginRole(role)
@@ -45,6 +50,14 @@ export default function App() {
     setScreen('role')
   }
 
+  const handleSetupComplete = ({ staffPin, adminPin, school: newSchool }) => {
+    setCustomSchools(prev => ({
+      ...prev,
+      [newSchool.code]: { staffPin, adminPin, school: newSchool },
+    }))
+    handleLogin('admin', newSchool)
+  }
+
   return (
     <CarLineProvider>
       <ToastProvider>
@@ -52,7 +65,18 @@ export default function App() {
         <ToastLayer />
 
         {screen === 'login' && (
-          <LoginView onLogin={handleLogin} />
+          <LoginView
+            onLogin={handleLogin}
+            onCreateSchool={() => setScreen('setup')}
+            schools={allSchools}
+          />
+        )}
+
+        {screen === 'setup' && (
+          <SetupView
+            onComplete={handleSetupComplete}
+            onBack={() => setScreen('login')}
+          />
         )}
 
         {screen === 'role' && school && (
