@@ -25,7 +25,7 @@ export function TeacherView({ school, loginRole, onLogout }) {
     const allActive = students.filter(s => pickups[s.id] && pickups[s.id].status !== 'complete')
 
     return (
-      <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}>
+      <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
         <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
 
           {/* Cross-class active summary */}
@@ -80,8 +80,8 @@ export function TeacherView({ school, loginRole, onLogout }) {
                   {pending > 0 && (
                     <div style={{ background: 'var(--yellow)', color: 'oklch(0.25 0.05 80)', fontWeight: 800, fontSize: 12, padding: '3px 10px', borderRadius: 20 }}>{pending} active</div>
                   )}
-                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18,flexShrink:0}}>
-                    <polyline points="9 18 15 12 9 6"/>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18, flexShrink: 0 }}>
+                    <polyline points="9 18 15 12 9 6" />
                   </svg>
                 </div>
               )
@@ -93,15 +93,15 @@ export function TeacherView({ school, loginRole, onLogout }) {
   }
 
   // ── Selected class view ──────────────────────────────────────
-  const myStudents      = students.filter(s => s.class_id === selectedClass.id)
-  const needsToGo       = myStudents.filter(s => pickups[s.id]?.status === 'requested')
+  const myStudents = students.filter(s => s.class_id === selectedClass.id)
+  const needsToGo = myStudents.filter(s => pickups[s.id]?.status === 'requested')
   const awaitingConfirm = myStudents.filter(s => pickups[s.id]?.status === 'sent')
-  const pickedUp        = myStudents.filter(s => pickups[s.id]?.status === 'complete')
-  const stillHere       = myStudents.filter(s => !pickups[s.id] && !absent.has(s.id))
-  const absentList      = myStudents.filter(s => absent.has(s.id))
+  const pickedUp = myStudents.filter(s => pickups[s.id]?.status === 'complete')
+  const stillHere = myStudents.filter(s => !pickups[s.id] && !absent.has(s.id))
+  const absentList = myStudents.filter(s => absent.has(s.id))
 
   return (
-    <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}>
+    <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
       {/* Class header */}
       <div style={{
         padding: '14px 16px 12px',
@@ -119,7 +119,7 @@ export function TeacherView({ school, loginRole, onLogout }) {
         </div>
         <button
           onClick={() => setSelectedClass(null)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-2)', fontFamily: 'var(--font-body)', fontWeight: 600, padding: '6px 10px', borderRadius: 8, background: 'oklch(0.90 0.05 150)' }}
+          style={{ border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-2)', fontFamily: 'var(--font-body)', fontWeight: 600, padding: '6px 10px', borderRadius: 8, background: 'oklch(0.90 0.05 150)' }}
         >
           ← Change class
         </button>
