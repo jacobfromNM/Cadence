@@ -1,21 +1,22 @@
 // src/context/CarLineContext.jsx
 //
 // Global state and actions for the entire app.
+// Currently uses in-memory mock data.
 //
-// Currently uses in-memory mock data (VITE_USE_MOCK_DATA=true).
-// Each action has a clearly marked "── SUPABASE VERSION ──" comment
-// showing the exact swap needed when you wire up a real database.
+// TO SWITCH TO SUPABASE: see the "SUPABASE SWAP" notes on each action.
+// The data shape here mirrors the Supabase tables exactly, so the swap
+// is straightforward when you're ready.
 //
-// Data shape (mirrors Supabase tables):
-//   schools       { id, name, code, staff_pin_hash, admin_pin_hash }
-//   classes       { id, school_id, code, teacher_name }
-//   students      { id, school_id, class_id, name }
+// Data shape:
+//   schools         { id, name, code, staff_pin_hash, admin_pin_hash }
+//   classes         { id, school_id, code, teacher_name }
+//   students        { id, school_id, class_id, name }
 //   pickup_requests { id, student_id, class_id, school_id, status, requested_at, sent_at, completed_at }
-//   absent_today  Set of student ids (resets daily)
+//   absent_today    Set of student ids (resets daily)
 
 import React, { createContext, useContext, useState, useCallback } from 'react'
 import { MOCK_CLASSES, MOCK_STUDENTS } from '../lib/mockData'
-// import { supabase } from '../lib/supabase'  // ← uncomment when going live
+// import { supabase } from '../lib/supabase'  // uncomment when going live
 
 const CarLineCtx = createContext(null)
 
@@ -33,56 +34,43 @@ export function CarLineProvider({ children }) {
   // ── Pickup actions ──────────────────────────────────────────
 
   const requestPickup = useCallback((studentId) => {
-    // ── SUPABASE VERSION ──
-    const { error } = await supabase.from('pickup_requests').insert({
-      student_id: studentId,
-      class_id: students.find(s => s.id === studentId)?.class_id,
-      school_id: 'mesa-elem',
-      status: 'requested',
-      requested_at: new Date().toISOString(),
-    })
-    // Real-time subscription in TeacherView will pick up the INSERT automatically.
-    // setPickups(p => ({
-    //   ...p,
-    //   [studentId]: { status: 'requested', requested_at: new Date(), sent_at: null, completed_at: null },
-    // }))
+    // SUPABASE SWAP: replace the setPickups call below with an async insert
+    // into the pickup_requests table. The real-time subscription in TeacherView
+    // will pick up the INSERT automatically — no extra push needed.
+    setPickups(p => ({
+      ...p,
+      [studentId]: { status: 'requested', requested_at: new Date(), sent_at: null, completed_at: null },
+    }))
   }, [])
 
   const sendStudent = useCallback((studentId) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('pickup_requests')
-      .update({ status: 'sent', sent_at: new Date().toISOString() })
-      .eq('student_id', studentId).eq('status', 'requested')
-    // setPickups(p => ({ ...p, [studentId]: { ...p[studentId], status: 'sent', sent_at: new Date() } }))
+    // SUPABASE SWAP: update the pickup_requests row for this studentId,
+    // setting status to 'sent' and sent_at to now().
+    setPickups(p => ({ ...p, [studentId]: { ...p[studentId], status: 'sent', sent_at: new Date() } }))
   }, [])
 
   const completePickup = useCallback((studentId) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('pickup_requests')
-      .update({ status: 'complete', completed_at: new Date().toISOString() })
-      .eq('student_id', studentId).eq('status', 'sent')
-    // setPickups(p => ({ ...p, [studentId]: { ...p[studentId], status: 'complete', completed_at: new Date() } }))
+    // SUPABASE SWAP: update the pickup_requests row for this studentId,
+    // setting status to 'complete' and completed_at to now().
+    setPickups(p => ({ ...p, [studentId]: { ...p[studentId], status: 'complete', completed_at: new Date() } }))
   }, [])
 
   const cancelPickup = useCallback((studentId) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('pickup_requests').delete().eq('student_id', studentId)
-    // setPickups(p => { const n = { ...p }; delete n[studentId]; return n })
+    // SUPABASE SWAP: delete the pickup_requests row for this studentId.
+    setPickups(p => { const n = { ...p }; delete n[studentId]; return n })
   }, [])
 
   // ── Absence actions ─────────────────────────────────────────
 
   const markAbsent = useCallback((studentId) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('absent_today').upsert({ student_id: studentId, school_id: 'mesa-elem', date: today() })
-    // setAbsent(prev => { const n = new Set(prev); n.add(studentId); return n })
-    // setPickups(p => { const n = { ...p }; delete n[studentId]; return n })
+    // SUPABASE SWAP: upsert a row into absent_today for this studentId.
+    setAbsent(prev => { const n = new Set(prev); n.add(studentId); return n })
+    setPickups(p => { const n = { ...p }; delete n[studentId]; return n })
   }, [])
 
   const markPresent = useCallback((studentId) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('absent_today').delete().eq('student_id', studentId)
-    // setAbsent(prev => { const n = new Set(prev); n.delete(studentId); return n })
+    // SUPABASE SWAP: delete the absent_today row for this studentId.
+    setAbsent(prev => { const n = new Set(prev); n.delete(studentId); return n })
   }, [])
 
   const isAbsent = useCallback((studentId) => absent.has(studentId), [absent])
@@ -91,57 +79,45 @@ export function CarLineProvider({ children }) {
 
   const addClass = useCallback((code, teacherName, schoolId = 'mesa-elem') => {
     const id = code.toLowerCase().replace(/[\s-]+/g, '-') + '-' + Date.now()
-    // ── SUPABASE VERSION ──
-    const { data } = await supabase.from('classes')
-      .insert({ code: code.toUpperCase(), teacher_name: teacherName, school_id: schoolId })
-      .select().single()
-    return data.id
-    // setClasses(p => [...p, { id, school_id: schoolId, code: code.toUpperCase(), teacher_name: teacherName }])
-    // return id
+    // SUPABASE SWAP: insert into classes table and return the new row's id.
+    setClasses(p => [...p, { id, school_id: schoolId, code: code.toUpperCase(), teacher_name: teacherName }])
+    return id
   }, [])
 
   const editClass = useCallback((classId, updates) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('classes').update(updates).eq('id', classId)
-    // setClasses(p => p.map(c => c.id === classId ? { ...c, ...updates } : c))
+    // SUPABASE SWAP: update the classes row matching classId.
+    setClasses(p => p.map(c => c.id === classId ? { ...c, ...updates } : c))
   }, [])
 
   const deleteClass = useCallback((classId) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('classes').delete().eq('id', classId)
-    // Cascade deletes students + pickups via FK constraints in Supabase
-    // const toRemove = students.filter(s => s.class_id === classId).map(s => s.id)
-    // setClasses(p => p.filter(c => c.id !== classId))
-    // setStudents(p => p.filter(s => s.class_id !== classId))
-    // setPickups(p => { const n = { ...p }; toRemove.forEach(id => delete n[id]); return n })
-    // setAbsent(prev => { const n = new Set(prev); toRemove.forEach(id => n.delete(id)); return n })
+    // SUPABASE SWAP: delete the classes row matching classId. FK cascade
+    // in Supabase will automatically remove students and pickup_requests.
+    const toRemove = students.filter(s => s.class_id === classId).map(s => s.id)
+    setClasses(p => p.filter(c => c.id !== classId))
+    setStudents(p => p.filter(s => s.class_id !== classId))
+    setPickups(p => { const n = { ...p }; toRemove.forEach(id => delete n[id]); return n })
+    setAbsent(prev => { const n = new Set(prev); toRemove.forEach(id => n.delete(id)); return n })
   }, [students])
 
   // ── Student management ──────────────────────────────────────
 
   const addStudent = useCallback((name, classId, schoolId = 'mesa-elem') => {
     const id = 's' + Date.now() + Math.random().toString(36).slice(2, 6)
-    // ── SUPABASE VERSION ──
-    const { data } = await supabase.from('students')
-      .insert({ name, class_id: classId, school_id: schoolId })
-      .select().single()
-    return data.id
-    // setStudents(p => [...p, { id, school_id: schoolId, class_id: classId, name }])
-    // return id
+    // SUPABASE SWAP: insert into students table and return the new row's id.
+    setStudents(p => [...p, { id, school_id: schoolId, class_id: classId, name }])
+    return id
   }, [])
 
   const editStudent = useCallback((studentId, updates) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('students').update(updates).eq('id', studentId)
-    // setStudents(p => p.map(s => s.id === studentId ? { ...s, ...updates } : s))
+    // SUPABASE SWAP: update the students row matching studentId.
+    setStudents(p => p.map(s => s.id === studentId ? { ...s, ...updates } : s))
   }, [])
 
   const deleteStudent = useCallback((studentId) => {
-    // ── SUPABASE VERSION ──
-    await supabase.from('students').delete().eq('id', studentId)
-    // setStudents(p => p.filter(s => s.id !== studentId))
-    // setPickups(p => { const n = { ...p }; delete n[studentId]; return n })
-    // setAbsent(prev => { const n = new Set(prev); n.delete(studentId); return n })
+    // SUPABASE SWAP: delete the students row matching studentId.
+    setStudents(p => p.filter(s => s.id !== studentId))
+    setPickups(p => { const n = { ...p }; delete n[studentId]; return n })
+    setAbsent(prev => { const n = new Set(prev); n.delete(studentId); return n })
   }, [])
 
   // ── Danger zone ─────────────────────────────────────────────
