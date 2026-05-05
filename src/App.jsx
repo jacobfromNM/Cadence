@@ -1,14 +1,15 @@
 // src/App.jsx
 //
-// Top-level component. Manages which screen is active and holds login state.
-// Screen flow:
-//   login → role → staff | teacher | admin (setup)
+// Top-level component. Manages screen routing and login state.
+// Screen flow: login → setup | role → staff | teacher | admin
 //
-// All data lives in CarLineProvider (context/CarLineContext.jsx).
-// Toasts live in ToastProvider (context/ToastContext.jsx).
+// Login now validates against Supabase (schools table).
+// School setup writes a new row to the schools table.
+// After login, initSchool() is called to fetch all data and open
+// real-time subscriptions for that school.
 
 import React, { useState } from 'react'
-import { CarLineProvider } from './context/CarLineContext'
+import { CarLineProvider, useCarLine } from './context/CarLineContext'
 import { ToastProvider } from './context/ToastContext'
 import { ToastLayer } from './components/ui'
 import { LoginView } from './views/LoginView'
@@ -17,100 +18,162 @@ import { StaffView } from './views/StaffView'
 import { TeacherView } from './views/TeacherView'
 import { AdminView } from './views/AdminView'
 import { SetupView } from './views/SetupView'
-import { SCHOOL_CREDENTIALS } from './lib/mockData'
+import { supabase } from './lib/supabase'
 
-// Screen names match the role selected in RoleView
-// 'login' → 'setup' | 'role' → 'staff' | 'teacher' | 'admin'
+// ── Inner app — needs access to CarLineProvider context ───────
+function InnerApp() {
+  const { initSchool, clearSchool, loading } = useCarLine()
 
-export default function App() {
-  const [screen, setScreen]             = useState('login')
-  const [loginRole, setLoginRole]       = useState(null)   // 'staff' | 'admin'
-  const [school, setSchool]             = useState(null)
-  const [customSchools, setCustomSchools] = useState({})   // schools created this session
+  const [screen,    setScreen]    = useState('login')
+  const [loginRole, setLoginRole] = useState(null)   // 'staff' | 'admin'
+  const [school,    setSchool]    = useState(null)
+  const [authError, setAuthError] = useState('')
 
-  const allSchools = { ...SCHOOL_CREDENTIALS, ...customSchools }
+  // Called by LoginView after the user enters a school code + PIN.
+  // Looks up the school in Supabase and validates the PIN.
+  const handleLogin = async (code, pin) => {
+    setAuthError('')
+    const upperCode = code.trim().toUpperCase()
 
-  const handleLogin = (role, schoolData) => {
+    const { data: schoolData, error } = await supabase
+      .from('schools')
+      .select('*')
+      .eq('code', upperCode)
+      .single()
+
+    if (error || !schoolData) {
+      return { error: 'School code not recognised. Check with your administrator.' }
+    }
+
+    // PIN check — plain text for now, bcrypt in a future hardening pass
+    let role = null
+    if (pin === schoolData.admin_pin_hash)       role = 'admin'
+    else if (pin === schoolData.staff_pin_hash)  role = 'staff'
+
+    if (!role) {
+      return { error: 'Incorrect PIN. Check with your school administrator.' }
+    }
+
+    // Fetch all data for this school and open real-time subscriptions
+    await initSchool(schoolData.id)
+
     setLoginRole(role)
     setSchool(schoolData)
     setScreen('role')
+    return { error: null }
   }
 
-  const handleRoleSelect = (role) => {
-    setScreen(role)  // 'staff' | 'teacher' | 'admin'
+  // Called by SetupView when the wizard completes.
+  // Inserts the new school into Supabase, then logs in as admin.
+  const handleSetupComplete = async ({ staffPin, adminPin, school: newSchool }) => {
+    setAuthError('')
+
+    // Check the code isn't already taken
+    const { data: existing } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('code', newSchool.code)
+      .single()
+
+    if (existing) {
+      return { error: `School code "${newSchool.code}" is already in use. Choose a different code.` }
+    }
+
+    const { data: inserted, error } = await supabase
+      .from('schools')
+      .insert({
+        name:            newSchool.name,
+        code:            newSchool.code,
+        staff_pin_hash:  staffPin,
+        admin_pin_hash:  adminPin,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return { error: 'Could not create school. Please try again.' }
+    }
+
+    // Initialise context for the new school (no classes/students yet)
+    await initSchool(inserted.id)
+
+    setLoginRole('admin')
+    setSchool(inserted)
+    setScreen('role')
+    return { error: null }
   }
+
+  const handleRoleSelect = (role) => setScreen(role)
 
   const handleLogout = () => {
+    clearSchool()
     setScreen('login')
     setLoginRole(null)
     setSchool(null)
   }
 
-  const handleBackToRole = () => {
-    setScreen('role')
-  }
+  const handleBackToRole = () => setScreen('role')
 
-  const handleSetupComplete = ({ staffPin, adminPin, school: newSchool }) => {
-    setCustomSchools(prev => ({
-      ...prev,
-      [newSchool.code]: { staffPin, adminPin, school: newSchool },
-    }))
-    handleLogin('admin', newSchool)
-  }
+  return (
+    <>
+      <ToastLayer />
 
+      {screen === 'login' && (
+        <LoginView
+          onLogin={handleLogin}
+          onCreateSchool={() => setScreen('setup')}
+        />
+      )}
+
+      {screen === 'setup' && (
+        <SetupView
+          onComplete={handleSetupComplete}
+          onBack={() => setScreen('login')}
+        />
+      )}
+
+      {screen === 'role' && school && (
+        <RoleView
+          school={school}
+          loginRole={loginRole}
+          onSelect={handleRoleSelect}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {screen === 'staff' && school && (
+        <StaffView
+          school={school}
+          loginRole={loginRole}
+          onLogout={handleBackToRole}
+        />
+      )}
+
+      {screen === 'teacher' && school && (
+        <TeacherView
+          school={school}
+          loginRole={loginRole}
+          onLogout={handleBackToRole}
+        />
+      )}
+
+      {screen === 'admin' && school && (
+        <AdminView
+          school={school}
+          loginRole={loginRole}
+          onLogout={handleBackToRole}
+        />
+      )}
+    </>
+  )
+}
+
+// ── Root — wraps providers around InnerApp ────────────────────
+export default function App() {
   return (
     <CarLineProvider>
       <ToastProvider>
-        {/* Global toast layer — floats above everything */}
-        <ToastLayer />
-
-        {screen === 'login' && (
-          <LoginView
-            onLogin={handleLogin}
-            onCreateSchool={() => setScreen('setup')}
-            schools={allSchools}
-          />
-        )}
-
-        {screen === 'setup' && (
-          <SetupView
-            onComplete={handleSetupComplete}
-            onBack={() => setScreen('login')}
-          />
-        )}
-
-        {screen === 'role' && school && (
-          <RoleView
-            school={school}
-            loginRole={loginRole}
-            onSelect={handleRoleSelect}
-            onLogout={handleLogout}
-          />
-        )}
-
-        {screen === 'staff' && school && (
-          <StaffView
-            school={school}
-            loginRole={loginRole}
-            onLogout={handleBackToRole}
-          />
-        )}
-
-        {screen === 'teacher' && school && (
-          <TeacherView
-            school={school}
-            loginRole={loginRole}
-            onLogout={handleBackToRole}
-          />
-        )}
-
-        {screen === 'admin' && school && (
-          <AdminView
-            school={school}
-            loginRole={loginRole}
-            onLogout={handleBackToRole}
-          />
-        )}
+        <InnerApp />
       </ToastProvider>
     </CarLineProvider>
   )

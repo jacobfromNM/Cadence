@@ -1,5 +1,8 @@
 // src/views/SetupView.jsx
 // 3-step onboarding wizard: School Info → Set PINs → Review & Create
+//
+// onComplete is now async (writes to Supabase via App.jsx).
+// If the school code is already taken, the error is shown inline on step 3.
 
 import React, { useState, useRef } from 'react'
 import { Input } from '../components/ui'
@@ -19,60 +22,65 @@ function deriveCode(name) {
 }
 
 export function SetupView({ onComplete, onBack }) {
-  const [step, setStep] = useState(0)
-  const [err, setErr] = useState('')
+  const [step, setStep]       = useState(0)
+  const [err,  setErr]        = useState('')
+  const [saving, setSaving]   = useState(false)
 
   const [schoolName, setSchoolName] = useState('')
   const [schoolCode, setSchoolCode] = useState('')
   const codeWasEdited = useRef(false)
 
-  const [adminPin, setAdminPin]           = useState('')
+  const [adminPin,        setAdminPin]        = useState('')
   const [adminPinConfirm, setAdminPinConfirm] = useState('')
-  const [staffPin, setStaffPin]           = useState('')
+  const [staffPin,        setStaffPin]        = useState('')
   const [staffPinConfirm, setStaffPinConfirm] = useState('')
 
   const handleNameChange = (val) => {
     setSchoolName(val)
-    if (!codeWasEdited.current) {
-      setSchoolCode(deriveCode(val))
-    }
+    if (!codeWasEdited.current) setSchoolCode(deriveCode(val))
   }
 
   const handleCodeChange = (val) => {
-    const upper = val.toUpperCase().replace(/[^A-Z0-9-]/g, '')
-    setSchoolCode(upper)
+    setSchoolCode(val.toUpperCase().replace(/[^A-Z0-9-]/g, ''))
     codeWasEdited.current = true
   }
 
   const validateStep1 = () => {
-    if (!schoolName.trim())   { setErr('Please enter your school name.'); return false }
-    if (!schoolCode)          { setErr('Please enter a school code.'); return false }
-    if (schoolCode.length < 2){ setErr('School code must be at least 2 characters.'); return false }
+    if (!schoolName.trim())    { setErr('Please enter your school name.'); return false }
+    if (!schoolCode)           { setErr('Please enter a school code.'); return false }
+    if (schoolCode.length < 2) { setErr('School code must be at least 2 characters.'); return false }
     return true
   }
 
   const validateStep2 = () => {
-    if (!/^\d{4,6}$/.test(adminPin))       { setErr('Admin PIN must be 4–6 digits.'); return false }
-    if (adminPin !== adminPinConfirm)       { setErr('Admin PINs do not match.'); return false }
-    if (!/^\d{4,6}$/.test(staffPin))       { setErr('Staff PIN must be 4–6 digits.'); return false }
-    if (staffPin !== staffPinConfirm)       { setErr('Staff PINs do not match.'); return false }
-    if (adminPin === staffPin)              { setErr('Admin and staff PINs must be different.'); return false }
+    if (!/^\d{4,6}$/.test(adminPin))  { setErr('Admin PIN must be 4–6 digits.'); return false }
+    if (adminPin !== adminPinConfirm)  { setErr('Admin PINs do not match.'); return false }
+    if (!/^\d{4,6}$/.test(staffPin))  { setErr('Staff PIN must be 4–6 digits.'); return false }
+    if (staffPin !== staffPinConfirm)  { setErr('Staff PINs do not match.'); return false }
+    if (adminPin === staffPin)         { setErr('Admin and staff PINs must be different.'); return false }
     return true
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setErr('')
     if (step === 0) { if (validateStep1()) setStep(1) }
     else if (step === 1) { if (validateStep2()) setStep(2) }
     else {
+      // Step 3 — write to Supabase
+      setSaving(true)
       const school = {
-        id: schoolCode.toLowerCase(),
         name: schoolName.trim(),
         code: schoolCode,
         staff_pin_hash: staffPin,
         admin_pin_hash: adminPin,
       }
-      onComplete({ staffPin, adminPin, school })
+      const result = await onComplete({ staffPin, adminPin, school })
+      // onComplete returns { error } if something went wrong (e.g. duplicate code)
+      if (result?.error) {
+        setErr(result.error)
+        setSaving(false)
+      }
+      // On success App.jsx changes the screen — nothing to do here
     }
   }
 
@@ -175,8 +183,7 @@ export function SetupView({ onComplete, onBack }) {
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Admin PIN</div>
             <div>
               <label style={{ display: 'block', fontSize: 13, color: 'var(--text-2)', marginBottom: 6 }}>PIN</label>
-              <Input
-                mono type="password" placeholder="4–6 digits"
+              <Input mono type="password" placeholder="4–6 digits"
                 value={adminPin}
                 onChange={e => { setAdminPin(e.target.value.replace(/\D/g, '')); setErr('') }}
                 onKeyDown={handleKeyDown}
@@ -185,21 +192,18 @@ export function SetupView({ onComplete, onBack }) {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 13, color: 'var(--text-2)', marginBottom: 6 }}>Confirm PIN</label>
-              <Input
-                mono type="password" placeholder="••••"
+              <Input mono type="password" placeholder="••••"
                 value={adminPinConfirm}
                 onChange={e => { setAdminPinConfirm(e.target.value.replace(/\D/g, '')); setErr('') }}
                 onKeyDown={handleKeyDown}
                 maxLength={6} inputMode="numeric"
               />
             </div>
-
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Staff PIN</div>
               <div>
                 <label style={{ display: 'block', fontSize: 13, color: 'var(--text-2)', marginBottom: 6 }}>PIN</label>
-                <Input
-                  mono type="password" placeholder="4–6 digits"
+                <Input mono type="password" placeholder="4–6 digits"
                   value={staffPin}
                   onChange={e => { setStaffPin(e.target.value.replace(/\D/g, '')); setErr('') }}
                   onKeyDown={handleKeyDown}
@@ -208,8 +212,7 @@ export function SetupView({ onComplete, onBack }) {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 13, color: 'var(--text-2)', marginBottom: 6 }}>Confirm PIN</label>
-                <Input
-                  mono type="password" placeholder="••••"
+                <Input mono type="password" placeholder="••••"
                   value={staffPinConfirm}
                   onChange={e => { setStaffPinConfirm(e.target.value.replace(/\D/g, '')); setErr('') }}
                   onKeyDown={handleKeyDown}
@@ -259,19 +262,24 @@ export function SetupView({ onComplete, onBack }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 24 }}>
           <button
             onClick={handleNext}
+            disabled={saving}
             style={{
-              background: 'var(--blue)', color: '#fff', border: 'none',
+              background: saving ? 'var(--blue-mid)' : 'var(--blue)',
+              color: '#fff', border: 'none',
               borderRadius: 'var(--radius)', padding: '15px',
-              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+              cursor: saving ? 'default' : 'pointer',
             }}
           >
-            {step === 2 ? 'Create School' : 'Continue →'}
+            {saving ? 'Creating…' : step === 2 ? 'Create School' : 'Continue →'}
           </button>
           <button
             onClick={handleBack}
+            disabled={saving}
             style={{
               background: 'none', color: 'var(--text-2)', border: 'none',
-              padding: '8px', fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-body)',
+              padding: '8px', fontSize: 14, cursor: saving ? 'default' : 'pointer',
+              fontFamily: 'var(--font-body)',
             }}
           >
             ← {step === 0 ? 'Back to sign in' : 'Back'}

@@ -1,34 +1,28 @@
 // src/views/LoginView.jsx
+// Login is now async — onLogin(code, pin) returns { error } from App.jsx
+// which validates against the Supabase schools table.
 
 import React, { useState } from 'react'
 import { Input } from '../components/ui'
 
-export function LoginView({ onLogin, onCreateSchool, schools }) {
-  const [code, setCode] = useState('')
-  const [pin,  setPin]  = useState('')
-  const [err,  setErr]  = useState('')
+export function LoginView({ onLogin, onCreateSchool }) {
+  const [code,    setCode]    = useState('')
+  const [pin,     setPin]     = useState('')
+  const [err,     setErr]     = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = () => {
-    const upperCode = code.trim().toUpperCase()
-    const creds = schools[upperCode]
-
-    if (!code || !pin)  { setErr('Please enter your school code and PIN.'); return }
-    if (!creds)          { setErr('School code not recognised. Check with your administrator.'); return }
-
+  const handleSubmit = async () => {
+    if (!code || !pin) { setErr('Please enter your school code and PIN.'); return }
     setLoading(true)
+    setErr('')
 
-    // Simulate a brief async check (replace with Supabase auth call later)
-    setTimeout(() => {
-      if (pin === creds.adminPin) {
-        onLogin('admin', creds.school)
-      } else if (pin === creds.staffPin) {
-        onLogin('staff', creds.school)
-      } else {
-        setErr('Incorrect PIN. Check with your school administrator.')
-        setLoading(false)
-      }
-    }, 300)
+    const { error } = await onLogin(code, pin)
+
+    if (error) {
+      setErr(error)
+      setLoading(false)
+    }
+    // On success App.jsx changes the screen — no action needed here
   }
 
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleSubmit() }
@@ -98,7 +92,10 @@ export function LoginView({ onLogin, onCreateSchool, schools }) {
           </div>
 
           {err && (
-            <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 500, padding: '8px 12px', background: 'var(--red-light)', borderRadius: 8 }}>
+            <div style={{
+              fontSize: 13, color: 'var(--red)', fontWeight: 500,
+              padding: '8px 12px', background: 'var(--red-light)', borderRadius: 8,
+            }}>
               {err}
             </div>
           )}
@@ -110,7 +107,8 @@ export function LoginView({ onLogin, onCreateSchool, schools }) {
               background: loading ? 'var(--blue-mid)' : 'var(--blue)',
               color: '#fff', border: 'none', borderRadius: 'var(--radius)',
               padding: '15px', fontFamily: 'var(--font-body)',
-              fontSize: 16, fontWeight: 700, cursor: loading ? 'default' : 'pointer',
+              fontSize: 16, fontWeight: 700,
+              cursor: loading ? 'default' : 'pointer',
               transition: 'background 0.15s', marginTop: 4,
             }}
           >
