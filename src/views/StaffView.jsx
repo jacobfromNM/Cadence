@@ -374,20 +374,20 @@ function ClassDrillScreen({ cls, onBack }) {
 }
 
 // ── StaffView root ────────────────────────────────────────────
-export function StaffView({ school, loginRole, onLogout }) {
+export function StaffView({ school, loginRole, viewRole, onLogout }) {
   const [tab, setTab]           = useState('students')
   const [drillClass, setDrillClass] = useState(null)
 
   if (drillClass) {
     return (
-      <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
+      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
         <ClassDrillScreen cls={drillClass} onBack={() => setDrillClass(null)} />
       </AppShell>
     )
   }
 
   return (
-    <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
+    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
       {tab === 'students' && <StudentsTab onDrillClass={setDrillClass} />}
       {tab === 'active'   && <ActiveTab />}
       {tab === 'classes'  && <ClassesTab onDrill={setDrillClass} />}

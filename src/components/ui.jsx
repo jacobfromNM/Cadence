@@ -58,8 +58,8 @@ export function StatusPill({ status }) {
 // ── RoleBadge ──────────────────────────────────────────────────
 const ROLE_CONFIG = {
   staff:   { label: 'Pickup Staff', bg: 'var(--blue-light)',   color: 'var(--blue)'   },
-  teacher: { label: 'Classroom',    bg: 'var(--green-light)',  color: 'var(--green)'  },
-  admin:   { label: 'Admin',        bg: 'var(--purple-light)', color: 'var(--purple)' },
+  teacher: { label: 'Teacher View', bg: 'var(--green-light)',  color: 'var(--green)'  },
+  admin:   { label: 'Admin View',   bg: 'var(--purple-light)', color: 'var(--purple)' },
 }
 
 export function RoleBadge({ role }) {

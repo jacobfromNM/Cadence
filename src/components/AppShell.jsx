@@ -41,21 +41,25 @@ function useIsWide() {
   return isWide
 }
 
-export function AppShell({ school, loginRole, tab, onTabChange, onLogout, children }) {
+export function AppShell({ school, loginRole, viewRole, tab, onTabChange, onLogout, children }) {
   const isWide = useIsWide()
   const { activePickups } = useCarLine()
   const activePending = activePickups().length
 
-  // Build nav items based on role
-  const navItems = loginRole === 'teacher'
+  // viewRole reflects the selected view ('staff' | 'teacher' | 'admin')
+  // loginRole reflects the PIN used ('staff' | 'admin') — used for access gating only
+  const effectiveRole = viewRole || loginRole
+
+  // Build nav items based on the active view role
+  const navItems = effectiveRole === 'teacher'
     ? [
-        { id: 'queue',   label: 'Queue',   Icon: IconQueue },
+        { id: 'queue', label: 'Queue', Icon: IconQueue },
       ]
     : [
         { id: 'students', label: 'Students', Icon: IconStudents },
-        { id: 'active',   label: 'Active',   Icon: IconActive,   badge: activePending },
+        { id: 'active',   label: 'Active',   Icon: IconActive,  badge: activePending },
         { id: 'classes',  label: 'Classes',  Icon: IconClasses },
-        ...(loginRole === 'admin'
+        ...(effectiveRole === 'admin'
           ? [{ id: 'setup', label: 'Setup', Icon: IconSettings }]
           : []),
       ]
@@ -101,7 +105,7 @@ export function AppShell({ school, loginRole, tab, onTabChange, onLogout, childr
               </div>
             </div>
             <div style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500, marginBottom: 8 }}>{school.name}</div>
-            <RoleBadge role={loginRole} />
+            <RoleBadge role={effectiveRole} />
           </div>
 
           {/* Nav links */}
@@ -170,7 +174,7 @@ export function AppShell({ school, loginRole, tab, onTabChange, onLogout, childr
               <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{school.code}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <RoleBadge role={loginRole} />
+              <RoleBadge role={effectiveRole} />
               <button
                 onClick={onLogout}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4, display: 'flex', alignItems: 'center' }}

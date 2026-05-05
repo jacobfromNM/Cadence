@@ -325,29 +325,31 @@ function AddClassWizard({ onBack, onDone }) {
 }
 
 // ── AdminView root ────────────────────────────────────────────
-export function AdminView({ school, loginRole, onLogout }) {
+export function AdminView({ school, loginRole, viewRole, onLogout }) {
   const { classes, students, resetClassroomData, deleteSchool } = useCarLine()
   const { showToast } = useToast()
   const isAdmin = loginRole === 'admin'
+  // Teachers (viewRole='teacher') can add classes; staff (viewRole='staff') cannot
+  const canAddClass = isAdmin || viewRole === 'teacher'
   const [tab]               = useState('setup')
   const [view, setView]     = useState('menu')
   const [selectedClass, setSelectedClass] = useState(null)
   const [confirmReset, setConfirmReset]   = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  if (view === 'addClass' && isAdmin) return <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
-  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
+  if (view === 'addClass' && canAddClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
+  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
 
   if (view === 'editClass') {
     return (
-      <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}>
+      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
             </button>
             <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>
-              {isAdmin ? 'Edit Classes' : 'Manage Students'}
+              {isAdmin ? 'Edit Classes' : canAddClass ? 'Your Classes' : 'Manage Students'}
             </div>
           </div>
           <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
@@ -372,12 +374,12 @@ export function AdminView({ school, loginRole, onLogout }) {
 
   // Main menu
   const menuItems = [
-    ...(isAdmin ? [{ icon: '➕', label: 'Add a Class', desc: 'Create a new class with teacher and students', action: () => setView('addClass') }] : []),
+    ...(canAddClass ? [{ icon: '➕', label: 'Add a Class', desc: 'Create a new class with teacher and students', action: () => setView('addClass') }] : []),
     { icon: '✏️', label: isAdmin ? 'Edit Classes' : 'Manage Students', desc: isAdmin ? 'Update class info, students, or delete a class' : 'Add or remove students from any class', action: () => setView('editClass') },
   ]
 
   return (
-    <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}>
+    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}>
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>

@@ -35,7 +35,7 @@ const C = {
   glow:    (urgent) => urgent ? '0 0 0 3px oklch(0.70 0.22 25 / 0.20)' : '0 0 0 3px oklch(0.80 0.14 80 / 0.20)',
 }
 
-export function TeacherView({ school, loginRole, onLogout }) {
+export function TeacherView({ school, loginRole, viewRole, onLogout }) {
   const {
     classes, students, pickups, absent,
     sendStudent, markAbsent, markPresent, formatTime,
@@ -56,7 +56,7 @@ export function TeacherView({ school, loginRole, onLogout }) {
     const anyUrgent = allActive.some(s => elapsedMins(pickups[s.id]?.requested_at, now) > 3)
 
     return (
-      <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
         <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
 
           {/* Cross-class active summary */}
@@ -159,7 +159,7 @@ export function TeacherView({ school, loginRole, onLogout }) {
   const absentList = myStudents.filter(s => absent.has(s.id))
 
   return (
-    <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
       {/* Class header */}
       <div style={{
         padding: '14px 16px 12px',

@@ -97,7 +97,7 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
         <RoleCard
           icon="⚙️"
           title="School Setup"
-          desc={isAdmin ? 'Add classes, teachers & students' : 'Add or remove students from classes'}
+          desc={isAdmin ? 'Add classes, teachers & students' : 'Add classes and manage students'}
           onClick={() => onSelect('admin')}
           dashed
           badge={isAdmin ? (

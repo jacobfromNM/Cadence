@@ -25,7 +25,8 @@ function InnerApp() {
   const { initSchool, clearSchool, loading } = useCarLine()
 
   const [screen,    setScreen]    = useState('login')
-  const [loginRole, setLoginRole] = useState(null)   // 'staff' | 'admin'
+  const [loginRole, setLoginRole] = useState(null)   // 'staff' | 'admin' — the PIN used to log in
+  const [viewRole,  setViewRole]  = useState(null)   // 'staff' | 'teacher' | 'admin' — which view was selected
   const [school,    setSchool]    = useState(null)
   const [authError, setAuthError] = useState('')
 
@@ -104,12 +105,16 @@ function InnerApp() {
     return { error: null }
   }
 
-  const handleRoleSelect = (role) => setScreen(role)
+  const handleRoleSelect = (role) => {
+    setViewRole(role)
+    setScreen(role)
+  }
 
   const handleLogout = () => {
     clearSchool()
     setScreen('login')
     setLoginRole(null)
+    setViewRole(null)
     setSchool(null)
   }
 
@@ -146,6 +151,7 @@ function InnerApp() {
         <StaffView
           school={school}
           loginRole={loginRole}
+          viewRole={viewRole}
           onLogout={handleBackToRole}
         />
       )}
@@ -154,6 +160,7 @@ function InnerApp() {
         <TeacherView
           school={school}
           loginRole={loginRole}
+          viewRole={viewRole}
           onLogout={handleBackToRole}
         />
       )}
@@ -162,6 +169,7 @@ function InnerApp() {
         <AdminView
           school={school}
           loginRole={loginRole}
+          viewRole={viewRole}
           onLogout={handleBackToRole}
         />
       )}
