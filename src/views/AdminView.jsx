@@ -134,8 +134,8 @@ function EditClassScreen({ cls, onBack, isAdmin }) {
 
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Class details — admin only */}
-        {isAdmin && card(
+        {/* Class details */}
+        {card(
           <>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Class Code</label>
@@ -329,15 +329,13 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
   const { classes, students, resetClassroomData, deleteSchool } = useCarLine()
   const { showToast } = useToast()
   const isAdmin = loginRole === 'admin'
-  // Teachers (viewRole='teacher') can add classes; staff (viewRole='staff') cannot
-  const canAddClass = isAdmin || viewRole === 'teacher'
   const [tab]               = useState('setup')
   const [view, setView]     = useState('menu')
   const [selectedClass, setSelectedClass] = useState(null)
   const [confirmReset, setConfirmReset]   = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  if (view === 'addClass' && canAddClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
+  if (view === 'addClass') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
   if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
 
   if (view === 'editClass') {
@@ -348,13 +346,11 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>
-              {isAdmin ? 'Edit Classes' : canAddClass ? 'Your Classes' : 'Manage Students'}
-            </div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Edit Classes</div>
           </div>
           <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
             {classes.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-3)' }}>No classes yet. Ask your admin to add one first.</div>
+              <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-3)' }}>No classes yet. Add one first.</div>
             )}
             {classes.map(cls => (
               <div key={cls.id} onClick={() => { setSelectedClass(cls); setView('editingClass') }} style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', padding: '14px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
@@ -374,8 +370,8 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
 
   // Main menu
   const menuItems = [
-    ...(canAddClass ? [{ icon: '➕', label: 'Add a Class', desc: 'Create a new class with teacher and students', action: () => setView('addClass') }] : []),
-    { icon: '✏️', label: isAdmin ? 'Edit Classes' : 'Manage Students', desc: isAdmin ? 'Update class info, students, or delete a class' : 'Add or remove students from any class', action: () => setView('editClass') },
+    { icon: '➕', label: 'Add a Class',  desc: 'Create a new class with teacher and students', action: () => setView('addClass') },
+    { icon: '✏️', label: 'Edit Classes', desc: 'Update class info, students, or delete a class',  action: () => setView('editClass') },
   ]
 
   return (
