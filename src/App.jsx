@@ -91,6 +91,7 @@ function InnerApp() {
       .single()
 
     if (error) {
+      console.error('School insert failed:', error)
       return { error: 'Could not create school. Please try again.' }
     }
 
