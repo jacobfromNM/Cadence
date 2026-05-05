@@ -135,7 +135,7 @@ export function AppShell({ school, loginRole, tab, onTabChange, onLogout, childr
             })}
           </nav>
 
-          {/* Log out */}
+          {/* Back to home */}
           <div style={{ padding: '12px 12px', borderTop: '1px solid var(--border)' }}>
             <button
               onClick={onLogout}
@@ -147,8 +147,8 @@ export function AppShell({ school, loginRole, tab, onTabChange, onLogout, childr
                 width: '100%', transition: 'all 0.15s',
               }}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:20,height:20}}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              Log out
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:20,height:20}}><polyline points="15 18 9 12 15 6"/></svg>
+              Home
             </button>
           </div>
         </aside>
@@ -173,8 +173,10 @@ export function AppShell({ school, loginRole, tab, onTabChange, onLogout, childr
               <RoleBadge role={loginRole} />
               <button
                 onClick={onLogout}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 18, padding: 4 }}
-              >⏏</button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4, display: 'flex', alignItems: 'center' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
             </div>
           </div>
         )}

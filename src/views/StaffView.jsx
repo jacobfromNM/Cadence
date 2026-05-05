@@ -154,8 +154,8 @@ function StudentsTab({ onDrillClass }) {
                   ) : pickup.status === 'sent' ? (
                     <button
                       onClick={() => handleComplete(s)}
-                      style={{ flexShrink: 0, background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                    >✓ Delivered</button>
+                      style={{ flexShrink: 0, background: 'oklch(0.68 0.19 48)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >Mark as Delivered</button>
                   ) : (
                     <span style={{ background: 'var(--green-light)', color: 'var(--green)', fontWeight: 700, fontSize: 12, padding: '8px 12px', borderRadius: 10, whiteSpace: 'nowrap' }}>🟢 Done</span>
                   )}
@@ -187,7 +187,7 @@ function StudentsTab({ onDrillClass }) {
                   <button onClick={() => handleParentHere(s)} style={{ background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✋ Parent Here</button>
                 ) : pickup.status === 'requested' ? <StatusPill status="requested" />
                   : pickup.status === 'sent' ? (
-                    <button onClick={() => handleComplete(s)} style={{ background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Delivered</button>
+                    <button onClick={() => handleComplete(s)} style={{ background: 'oklch(0.68 0.19 48)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Mark as Delivered</button>
                   ) : <StatusPill status="complete" />
                 }
               </div>
@@ -346,7 +346,7 @@ function ClassDrillScreen({ cls, onBack }) {
                 <button onClick={() => handleParentHere(s)} style={{ background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✋ Parent Here</button>
               ) : pickup.status === 'requested' ? <StatusPill status="requested" />
                 : pickup.status === 'sent' ? (
-                  <button onClick={() => handleComplete(s)} style={{ background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Delivered</button>
+                  <button onClick={() => handleComplete(s)} style={{ background: 'oklch(0.68 0.19 48)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Mark as Delivered</button>
                 ) : <StatusPill status="complete" />
               }
             </div>

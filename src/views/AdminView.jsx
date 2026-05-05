@@ -213,19 +213,27 @@ function EditClassScreen({ cls, onBack }) {
 
 // ── Add class wizard ──────────────────────────────────────────
 function AddClassWizard({ onBack, onDone }) {
-  const { classes, addClass } = useCarLine()
+  const { classes, addClass, studentsInClass } = useCarLine()
   const { showToast } = useToast()
   const [step, setStep]           = useState(0)
   const [classCode, setClassCode] = useState('')
   const [teacherName, setTeacherName] = useState('')
   const [newClassId, setNewClassId]   = useState(null)
+  const [creating, setCreating]       = useState(false)
 
-  const handleCreate = () => {
-    if (!classCode || !teacherName) return
-    const id = addClass(classCode, teacherName)
-    setNewClassId(id)
-    setStep(1)
-    showToast({ type: 'success', title: `${classCode.toUpperCase()} created!` })
+  const handleCreate = async () => {
+    if (!classCode || !teacherName || creating) return
+    setCreating(true)
+    try {
+      const id = await addClass(classCode, teacherName)
+      setNewClassId(id)
+      setStep(1)
+      showToast({ type: 'success', title: `${classCode.toUpperCase()} created!` })
+    } catch {
+      showToast({ type: 'error', title: 'Could not create class', sub: 'Check your connection and try again.' })
+    } finally {
+      setCreating(false)
+    }
   }
 
   const stepLabels = ['Class Details', 'Add Students', 'Done']
@@ -259,21 +267,41 @@ function AddClassWizard({ onBack, onDone }) {
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Teacher Name</label>
               <Input value={teacherName} onChange={e => setTeacherName(e.target.value)} placeholder="e.g. Mrs. Jones" />
             </div>
-            <button onClick={handleCreate} disabled={!classCode || !teacherName} style={{ background: classCode && teacherName ? 'var(--blue)' : 'var(--blue-mid)', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, cursor: classCode && teacherName ? 'pointer' : 'default' }}>
-              Create Class →
+            <button onClick={handleCreate} disabled={!classCode || !teacherName || creating} style={{ background: classCode && teacherName && !creating ? 'var(--blue)' : 'var(--blue-mid)', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, cursor: classCode && teacherName && !creating ? 'pointer' : 'default' }}>
+              {creating ? 'Creating…' : 'Create Class →'}
             </button>
           </>
         )}
-        {step === 1 && newClassId && (
-          <>
-            <div style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.5 }}>
-              Add students to <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--blue)' }}>{classCode}</span>. You can always add more later.
-            </div>
-            <StudentAddForm classId={newClassId} classes={classes} />
-            <button onClick={() => setStep(2)} style={{ background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Continue →</button>
-            <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--font-body)', fontSize: 14, cursor: 'pointer', padding: '4px 0' }}>Skip for now</button>
-          </>
-        )}
+        {step === 1 && newClassId && (() => {
+          const addedStudents = studentsInClass(newClassId)
+          return (
+            <>
+              <div style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.5 }}>
+                Add students to <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--blue)' }}>{classCode}</span>. You can always add more later.
+              </div>
+              <StudentAddForm classId={newClassId} classes={classes} />
+              {addedStudents.length > 0 && (
+                <div style={{ background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}>
+                    Added — {addedStudents.length} student{addedStudents.length !== 1 ? 's' : ''}
+                  </div>
+                  {addedStudents.map((s, i) => (
+                    <div key={s.id} style={{
+                      padding: '9px 14px', fontSize: 14, color: 'var(--text)',
+                      borderBottom: i < addedStudents.length - 1 ? '1px solid var(--border)' : 'none',
+                      display: 'flex', alignItems: 'center', gap: 8,
+                    }}>
+                      <span style={{ color: 'var(--green)', fontSize: 12 }}>✓</span>
+                      {s.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => setStep(2)} style={{ background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Continue →</button>
+              <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--font-body)', fontSize: 14, cursor: 'pointer', padding: '4px 0' }}>Skip for now</button>
+            </>
+          )
+        })()}
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, paddingTop: 20, textAlign: 'center' }}>
             <div style={{ width: 80, height: 80, background: 'var(--green-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>✓</div>
