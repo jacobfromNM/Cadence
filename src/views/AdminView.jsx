@@ -13,32 +13,50 @@ import { AppShell } from '../components/AppShell'
 // ── Student add form (one-by-one or paste a list) ─────────────
 function StudentAddForm({ classId, classes, onAdded }) {
   const { addStudent } = useCarLine()
+  const { showToast }  = useToast()
   const [name, setName]         = useState('')
   const [bulkText, setBulkText] = useState('')
   const [bulkMode, setBulkMode] = useState(false)
   const [added, setAdded]       = useState(0)
 
-  const handleOne = () => {
+  const handleOne = async () => {
     if (!name.trim()) return
-    addStudent(name.trim(), classId)
-    setAdded(p => p + 1)
-    setName('')
-    onAdded?.()
+    try {
+      await addStudent(name.trim(), classId)
+      setAdded(p => p + 1)
+      setName('')
+      onAdded?.()
+    } catch (e) {
+      console.error('addStudent failed:', e)
+      showToast({ type: 'error', title: 'Could not add student', sub: 'Check your connection and try again.' })
+    }
   }
 
-  const handleBulk = () => {
+  const handleBulk = async () => {
     const lines = bulkText.split('\n').map(l => l.trim()).filter(Boolean)
     let count = 0
-    lines.forEach(line => {
+    let failed = 0
+    for (const line of lines) {
       const [n, cls] = line.split(',').map(s => s.trim())
       const targetId = cls
         ? (classes.find(c => c.code.toLowerCase() === cls.toLowerCase())?.id || classId)
         : classId
-      if (n && targetId) { addStudent(n, targetId); count++ }
-    })
+      if (n && targetId) {
+        try {
+          await addStudent(n, targetId)
+          count++
+        } catch (e) {
+          console.error('addStudent failed:', e)
+          failed++
+        }
+      }
+    }
     setAdded(p => p + count)
     setBulkText('')
     onAdded?.()
+    if (failed > 0) {
+      showToast({ type: 'error', title: `${failed} student${failed === 1 ? '' : 's'} could not be added`, sub: 'Check your connection and try again.' })
+    }
   }
 
   return (
