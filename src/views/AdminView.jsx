@@ -1,7 +1,8 @@
 // src/views/AdminView.jsx
 //
-// School Setup screen — only reachable when logged in with the admin PIN.
-// Covers: add class, edit class, bulk-add students, delete class, reset, delete school.
+// School Setup screen — reachable with admin PIN (full access) or staff PIN (students only).
+// Admin: add/delete classes, edit class details, reset/delete school.
+// Staff: add/remove students within existing classes only.
 
 import React, { useState } from 'react'
 import { useCarLine } from '../context/CarLineContext'
@@ -94,7 +95,7 @@ function StudentAddForm({ classId, classes, onAdded }) {
 }
 
 // ── Edit class screen ─────────────────────────────────────────
-function EditClassScreen({ cls, onBack }) {
+function EditClassScreen({ cls, onBack, isAdmin }) {
   const { classes, studentsInClass, editClass, deleteClass, editStudent, deleteStudent } = useCarLine()
   const { showToast } = useToast()
   const [code, setCode]       = useState(cls.code)
@@ -126,13 +127,15 @@ function EditClassScreen({ cls, onBack }) {
         <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Edit Class</div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>
+          {cls.code} — {cls.teacher_name}
+        </div>
       </div>
 
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Class details */}
-        {card(
+        {/* Class details — admin only */}
+        {isAdmin && card(
           <>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Class Code</label>
@@ -169,7 +172,7 @@ function EditClassScreen({ cls, onBack }) {
                       <button onClick={() => setConfirmDeleteStu(null)} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 8px', fontSize: 12, cursor: 'pointer', color: 'var(--text-2)', fontFamily: 'var(--font-body)' }}>✕</button>
                     </div>
                   ) : (
-                    <button onClick={() => setConfirmDeleteStu(s.id)} style={{ background: 'var(--bg)', border: '1px solid oklch(0.75 0.14 25)', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--red)', fontFamily: 'var(--font-body)' }}>Delete</button>
+                    <button onClick={() => setConfirmDeleteStu(s.id)} style={{ background: 'var(--bg)', border: '1px solid oklch(0.75 0.14 25)', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--red)', fontFamily: 'var(--font-body)' }}>Remove</button>
                   )}
                 </>
               )}
@@ -183,28 +186,30 @@ function EditClassScreen({ cls, onBack }) {
           <StudentAddForm classId={cls.id} classes={classes} onAdded={() => refresh(r => r + 1)} />
         </div>
 
-        {/* Danger zone */}
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Danger Zone</div>
-          {!confirmDelete ? (
-            <button onClick={() => setConfirmDelete(true)} style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid oklch(0.75 0.14 25)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'var(--red)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 18 }}>🗑️</span>
-              <div>
-                <div>Delete Class</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Removes {cls.code} and all {myStudents.length} students</div>
-              </div>
-            </button>
-          ) : (
-            <ConfirmBlock
-              title={`Delete ${cls.code}?`}
-              message={`This will permanently delete the class and all ${myStudents.length} students in it.`}
-              confirmLabel="Delete Class"
-              danger
-              onCancel={() => setConfirmDelete(false)}
-              onConfirm={() => { deleteClass(cls.id); onBack(); showToast({ type: 'info', title: `${cls.code} deleted` }) }}
-            />
-          )}
-        </div>
+        {/* Danger zone — admin only */}
+        {isAdmin && (
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Danger Zone</div>
+            {!confirmDelete ? (
+              <button onClick={() => setConfirmDelete(true)} style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid oklch(0.75 0.14 25)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'var(--red)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 18 }}>🗑️</span>
+                <div>
+                  <div>Delete Class</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Removes {cls.code} and all {myStudents.length} students</div>
+                </div>
+              </button>
+            ) : (
+              <ConfirmBlock
+                title={`Delete ${cls.code}?`}
+                message={`This will permanently delete the class and all ${myStudents.length} students in it.`}
+                confirmLabel="Delete Class"
+                danger
+                onCancel={() => setConfirmDelete(false)}
+                onConfirm={() => { deleteClass(cls.id); onBack(); showToast({ type: 'info', title: `${cls.code} deleted` }) }}
+              />
+            )}
+          </div>
+        )}
         <div style={{ height: 16 }} />
       </div>
     </div>
@@ -323,14 +328,15 @@ function AddClassWizard({ onBack, onDone }) {
 export function AdminView({ school, loginRole, onLogout }) {
   const { classes, students, resetClassroomData, deleteSchool } = useCarLine()
   const { showToast } = useToast()
+  const isAdmin = loginRole === 'admin'
   const [tab]               = useState('setup')
-  const [view, setView]     = useState('menu')      // menu | addClass | editClass | editingClass
+  const [view, setView]     = useState('menu')
   const [selectedClass, setSelectedClass] = useState(null)
   const [confirmReset, setConfirmReset]   = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  if (view === 'addClass')    return <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
-  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} onBack={() => setView('editClass')} /></AppShell>
+  if (view === 'addClass' && isAdmin) return <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
+  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
 
   if (view === 'editClass') {
     return (
@@ -340,11 +346,13 @@ export function AdminView({ school, loginRole, onLogout }) {
             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Edit Classes</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>
+              {isAdmin ? 'Edit Classes' : 'Manage Students'}
+            </div>
           </div>
           <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
             {classes.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-3)' }}>No classes yet. Add one first.</div>
+              <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-3)' }}>No classes yet. Ask your admin to add one first.</div>
             )}
             {classes.map(cls => (
               <div key={cls.id} onClick={() => { setSelectedClass(cls); setView('editingClass') }} style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', padding: '14px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
@@ -364,8 +372,8 @@ export function AdminView({ school, loginRole, onLogout }) {
 
   // Main menu
   const menuItems = [
-    { icon: '➕', label: 'Add a Class',  desc: 'Create a new class with teacher and students', action: () => setView('addClass') },
-    { icon: '✏️', label: 'Edit Classes', desc: 'Update class info, students, or delete a class',  action: () => setView('editClass') },
+    ...(isAdmin ? [{ icon: '➕', label: 'Add a Class', desc: 'Create a new class with teacher and students', action: () => setView('addClass') }] : []),
+    { icon: '✏️', label: isAdmin ? 'Edit Classes' : 'Manage Students', desc: isAdmin ? 'Update class info, students, or delete a class' : 'Add or remove students from any class', action: () => setView('editClass') },
   ]
 
   return (
@@ -396,50 +404,52 @@ export function AdminView({ school, loginRole, onLogout }) {
           </div>
         ))}
 
-        {/* Danger zone */}
-        <div style={{ marginTop: 24 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Danger Zone</div>
+        {/* Danger zone — admin only */}
+        {isAdmin && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Danger Zone</div>
 
-          {confirmReset ? (
-            <ConfirmBlock
-              title="Reset all classroom data?"
-              message="All classes, students, and pickup history will be reset to defaults. School name and PINs are preserved."
-              confirmLabel="Yes, Reset"
-              danger={false}
-              onCancel={() => setConfirmReset(false)}
-              onConfirm={() => { resetClassroomData(); setConfirmReset(false); showToast({ type: 'info', title: 'Data reset to defaults' }) }}
-            />
-          ) : (
-            <button onClick={() => setConfirmReset(true)} style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid oklch(0.82 0.10 60)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'oklch(0.50 0.14 50)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <span style={{ fontSize: 18 }}>🔄</span>
-              <div>
-                <div>Reset Classroom Data</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Resets all classes/students to defaults</div>
-              </div>
-            </button>
-          )}
-
-          {confirmDelete ? (
-            <div style={{ marginTop: 10 }}>
+            {confirmReset ? (
               <ConfirmBlock
-                title={`Delete ${school.name}?`}
-                message="This permanently deletes all classes, students, and history. Cannot be undone."
-                confirmLabel="Delete Forever"
-                danger
-                onCancel={() => setConfirmDelete(false)}
-                onConfirm={() => { deleteSchool(); setConfirmDelete(false); onLogout(); showToast({ type: 'error', title: 'School data deleted' }) }}
+                title="Reset all classroom data?"
+                message="All classes, students, and pickup history will be reset to defaults. School name and PINs are preserved."
+                confirmLabel="Yes, Reset"
+                danger={false}
+                onCancel={() => setConfirmReset(false)}
+                onConfirm={() => { resetClassroomData(); setConfirmReset(false); showToast({ type: 'info', title: 'Data reset to defaults' }) }}
               />
-            </div>
-          ) : (
-            <button onClick={() => setConfirmDelete(true)} style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid oklch(0.75 0.14 25)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'var(--red)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 18 }}>🗑️</span>
-              <div>
-                <div>Delete School</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Permanently removes all school data</div>
+            ) : (
+              <button onClick={() => setConfirmReset(true)} style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid oklch(0.82 0.10 60)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'oklch(0.50 0.14 50)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <span style={{ fontSize: 18 }}>🔄</span>
+                <div>
+                  <div>Reset Classroom Data</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Resets all classes/students to defaults</div>
+                </div>
+              </button>
+            )}
+
+            {confirmDelete ? (
+              <div style={{ marginTop: 10 }}>
+                <ConfirmBlock
+                  title={`Delete ${school.name}?`}
+                  message="This permanently deletes all classes, students, and history. Cannot be undone."
+                  confirmLabel="Delete Forever"
+                  danger
+                  onCancel={() => setConfirmDelete(false)}
+                  onConfirm={() => { deleteSchool(); setConfirmDelete(false); onLogout(); showToast({ type: 'error', title: 'School data deleted' }) }}
+                />
               </div>
-            </button>
-          )}
-        </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid oklch(0.75 0.14 25)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'var(--red)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 18 }}>🗑️</span>
+                <div>
+                  <div>Delete School</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Permanently removes all school data</div>
+                </div>
+              </button>
+            )}
+          </div>
+        )}
         <div style={{ height: 24 }} />
       </div>
     </AppShell>

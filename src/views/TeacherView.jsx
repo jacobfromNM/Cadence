@@ -1,10 +1,39 @@
 // src/views/TeacherView.jsx
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useCarLine } from '../context/CarLineContext'
 import { useToast } from '../context/ToastContext'
 import { Avatar, StatusPill, EmptyState, SectionLabel } from '../components/ui'
 import { AppShell } from '../components/AppShell'
+
+// Ticks every 10 seconds so wait-time badges stay fresh
+function useNow() {
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 10000)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
+
+function elapsedMins(requestedAt, now) {
+  if (!requestedAt) return 0
+  return (now - new Date(requestedAt).getTime()) / 60000
+}
+
+function formatElapsed(mins) {
+  if (mins < 1) return '< 1m'
+  return `${Math.floor(mins)}m`
+}
+
+// Color helpers — yellow normally, red when parent has waited > 3 minutes
+const C = {
+  border:  (urgent) => urgent ? 'oklch(0.70 0.22 25)' : 'oklch(0.80 0.14 80)',
+  badge:   (urgent) => urgent ? 'oklch(0.88 0.10 25)' : 'var(--yellow)',
+  text:    (urgent) => urgent ? 'oklch(0.55 0.22 25)' : 'oklch(0.50 0.13 80)',
+  badgeFg: (urgent) => urgent ? 'oklch(0.30 0.15 25)' : 'oklch(0.25 0.05 80)',
+  glow:    (urgent) => urgent ? '0 0 0 3px oklch(0.70 0.22 25 / 0.20)' : '0 0 0 3px oklch(0.80 0.14 80 / 0.20)',
+}
 
 export function TeacherView({ school, loginRole, onLogout }) {
   const {
@@ -13,7 +42,8 @@ export function TeacherView({ school, loginRole, onLogout }) {
   } = useCarLine()
   const { showToast } = useToast()
   const [selectedClass, setSelectedClass] = useState(null)
-  const [tab] = useState('queue') // Teachers only have one tab
+  const [tab] = useState('queue')
+  const now = useNow()
 
   const handleSendStudent = (s) => {
     sendStudent(s.id)
@@ -23,6 +53,7 @@ export function TeacherView({ school, loginRole, onLogout }) {
   // ── Class selector (shown if teacher hasn't picked their class) ──
   if (!selectedClass) {
     const allActive = students.filter(s => pickups[s.id] && pickups[s.id].status !== 'complete')
+    const anyUrgent = allActive.some(s => elapsedMins(pickups[s.id]?.requested_at, now) > 3)
 
     return (
       <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
@@ -32,12 +63,19 @@ export function TeacherView({ school, loginRole, onLogout }) {
           {allActive.length > 0 && (
             <div style={{ margin: '12px 16px 4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'oklch(0.50 0.13 80)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>🟡 All active requests</span>
-                <span style={{ background: 'var(--yellow)', color: 'oklch(0.25 0.05 80)', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20 }}>{allActive.length}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: C.text(anyUrgent), letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {anyUrgent ? '🔴' : '🟡'} All active requests
+                </span>
+                <span style={{ background: C.badge(anyUrgent), color: C.badgeFg(anyUrgent), fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20 }}>
+                  {allActive.length}
+                </span>
               </div>
-              <div style={{ background: 'var(--surface)', border: '1.5px solid oklch(0.80 0.14 80)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+              <div style={{ background: 'var(--surface)', border: `1.5px solid ${C.border(anyUrgent)}`, borderRadius: 'var(--radius)', overflow: 'hidden' }}>
                 {allActive.map((s, i) => {
                   const cls = classes.find(c => c.id === s.class_id)
+                  const pickup = pickups[s.id]
+                  const mins = elapsedMins(pickup?.requested_at, now)
+                  const urgent = mins > 3
                   return (
                     <div key={s.id} style={{
                       display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
@@ -46,9 +84,29 @@ export function TeacherView({ school, loginRole, onLogout }) {
                       <Avatar name={s.name} size={34} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{s.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{cls?.code} · {cls?.teacher_name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
+                          {cls?.code} · {cls?.teacher_name}
+                        </div>
+                        {pickup?.requested_at && (
+                          <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', marginTop: 1, color: C.text(urgent), fontWeight: urgent ? 700 : 400 }}>
+                            ⏱ {formatElapsed(mins)} waiting
+                          </div>
+                        )}
                       </div>
-                      <StatusPill status={pickups[s.id].status} />
+                      {pickup?.status === 'requested' ? (
+                        <button
+                          onClick={() => handleSendStudent(s)}
+                          style={{
+                            flexShrink: 0, background: urgent ? 'oklch(0.65 0.22 25)' : 'var(--blue)',
+                            color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px',
+                            fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                          }}
+                        >
+                          🚶 Send Out
+                        </button>
+                      ) : (
+                        <StatusPill status={pickup?.status} />
+                      )}
                     </div>
                   )
                 })}
@@ -136,13 +194,15 @@ export function TeacherView({ school, loginRole, onLogout }) {
             </div>
             {needsToGo.map((s, i) => {
               const isNewest = i === 0
+              const mins = elapsedMins(pickups[s.id]?.requested_at, now)
+              const urgent = mins > 3
               return (
                 <div key={s.id} style={{
                   margin: '10px 16px',
                   background: 'var(--surface)',
                   borderRadius: 'var(--radius)',
-                  border: isNewest ? '1.5px solid oklch(0.80 0.14 80)' : '1px solid var(--border)',
-                  boxShadow: isNewest ? '0 0 0 3px oklch(0.80 0.14 80 / 0.20)' : 'none',
+                  border: isNewest ? `1.5px solid ${C.border(urgent)}` : '1px solid var(--border)',
+                  boxShadow: isNewest ? C.glow(urgent) : 'none',
                   overflow: 'hidden',
                 }}>
                   <div style={{ padding: '14px 16px' }}>
@@ -152,13 +212,18 @@ export function TeacherView({ school, loginRole, onLogout }) {
                         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{s.name}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginTop: 1 }}>
                           Parent arrived · {formatTime(pickups[s.id]?.requested_at)}
+                          {pickups[s.id]?.requested_at && (
+                            <span style={{ marginLeft: 6, color: C.text(urgent), fontWeight: urgent ? 700 : 400 }}>
+                              · ⏱ {formatElapsed(mins)}
+                            </span>
+                          )}
                         </div>
                       </div>
                       {isNewest && (
                         <span className="animate-pulse-badge" style={{
-                          background: 'var(--yellow)', color: 'oklch(0.25 0.05 80)',
+                          background: C.badge(urgent), color: C.badgeFg(urgent),
                           fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 20, letterSpacing: '0.05em',
-                        }}>● NEW</span>
+                        }}>{urgent ? '● URGENT' : '● NEW'}</span>
                       )}
                     </div>
                     <button

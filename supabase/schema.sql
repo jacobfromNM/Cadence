@@ -41,7 +41,9 @@ create table public.students (
   school_id   uuid not null references public.schools(id) on delete cascade,
   class_id    uuid not null references public.classes(id) on delete cascade,
   name        text not null,
-  created_at  timestamptz default now()
+  created_at  timestamptz default now(),
+  -- Prevents duplicate names within the same class on re-import
+  unique(school_id, class_id, name)
 );
 
 -- ── Pickup Requests ───────────────────────────────────────────
@@ -59,10 +61,6 @@ create table public.pickup_requests (
   completed_at timestamptz
 );
 
--- Index for real-time queries filtered by class
-create index on public.pickup_requests(class_id, status);
-create index on public.pickup_requests(school_id);
-
 -- ── Absent Today ──────────────────────────────────────────────
 -- Cleared each morning via a Supabase pg_cron job (see below).
 create table public.absent_today (
@@ -72,6 +70,21 @@ create table public.absent_today (
   date       date not null default current_date,
   unique(student_id, date)
 );
+
+-- =============================================================
+-- Indexes
+-- =============================================================
+
+-- pickup_requests: filtered by class + status for real-time queries
+create index on public.pickup_requests(class_id, status);
+create index on public.pickup_requests(school_id);
+
+-- students: school-scoped fetches and class-scoped joins
+create index on public.students(school_id);
+create index on public.students(class_id);
+
+-- absent_today: daily cleanup + school-scoped fetch
+create index on public.absent_today(school_id, date);
 
 -- =============================================================
 -- Row Level Security (RLS)
@@ -104,16 +117,16 @@ grant select, insert, update, delete on public.absent_today    to anon, authenti
 
 -- =============================================================
 -- Real-time
--- Enable Supabase real-time on the tables that need live updates.
+-- Enable Supabase real-time on ALL tables that need live updates.
 -- Dashboard → Database → Replication → toggle these tables on,
 -- OR run the SQL below.
 -- =============================================================
 
--- These statements add tables to the supabase_realtime publication
--- so Supabase pushes row changes to subscribed clients automatically.
 alter publication supabase_realtime add table public.pickup_requests;
 alter publication supabase_realtime add table public.absent_today;
 alter publication supabase_realtime add table public.students;
+-- classes must be in the publication so the client subscription fires
+alter publication supabase_realtime add table public.classes;
 
 -- =============================================================
 -- Nightly cleanup (optional but recommended)
@@ -131,6 +144,23 @@ select cron.schedule(
       where completed_at < now() - interval '18 hours';
   $$
 );
+
+-- =============================================================
+-- Migration note for existing deployments
+-- If you already ran an earlier version of this schema, apply
+-- these ALTER statements to bring your database up to date:
+--
+--   alter table public.students
+--     add constraint students_school_id_class_id_name_key
+--     unique (school_id, class_id, name);
+--
+--   create index if not exists students_school_id_idx on public.students(school_id);
+--   create index if not exists students_class_id_idx  on public.students(class_id);
+--   create index if not exists absent_today_school_date_idx
+--     on public.absent_today(school_id, date);
+--
+--   alter publication supabase_realtime add table public.classes;
+-- =============================================================
 
 -- =============================================================
 -- Seed data (optional — matches the mock data in src/lib/mockData.js)

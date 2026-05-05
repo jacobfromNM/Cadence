@@ -383,14 +383,27 @@ export function CarLineProvider({ children }) {
 
   const addStudent = useCallback(async (name, classId, sid) => {
     const targetSchoolId = sid || schoolId
+    const trimmed = name.trim()
+
+    // Upsert so re-importing the same roster doesn't create duplicates.
+    // The unique constraint (school_id, class_id, name) lives in the schema;
+    // on conflict we do a no-op update so the row (and its id) is returned.
     const { data, error } = await supabase
       .from('students')
-      .insert({ name, class_id: classId, school_id: targetSchoolId })
+      .upsert(
+        { name: trimmed, class_id: classId, school_id: targetSchoolId },
+        { onConflict: 'school_id,class_id,name' }
+      )
       .select()
       .single()
 
     if (error) throw error
-    setStudents(p => [...p, data].sort((a, b) => a.name.localeCompare(b.name)))
+    // Only add to local state when the student isn't already tracked
+    setStudents(p =>
+      p.some(s => s.id === data.id)
+        ? p
+        : [...p, data].sort((a, b) => a.name.localeCompare(b.name))
+    )
     return data.id
   }, [schoolId])
 

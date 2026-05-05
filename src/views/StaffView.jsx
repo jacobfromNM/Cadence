@@ -42,6 +42,7 @@ function StudentsTab({ onDrillClass }) {
   const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const [gradeFilter, setGradeFilter] = useState('All')
+  const [showComplete, setShowComplete] = useState(false)
 
   const getClass = (id) => classes.find(c => c.id === id)
 
@@ -54,7 +55,8 @@ function StudentsTab({ onDrillClass }) {
       || cls?.teacher_name.toLowerCase().includes(q)
     const matchGrade = gradeFilter === 'All'
       || cls?.code.toUpperCase().startsWith(gradeFilter)
-    return matchQuery && matchGrade
+    const matchComplete = !showComplete || pickups[s.id]?.status === 'complete'
+    return matchQuery && matchGrade && matchComplete
   })
 
   const isSearching = query.trim().length > 0
@@ -86,8 +88,22 @@ function StudentsTab({ onDrillClass }) {
       {/* Search + filter */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', paddingBottom: 10, flexShrink: 0 }}>
         <SearchBar value={query} onChange={setQuery} placeholder="Student, teacher, or class code…" />
-        {/* Grade filter chips */}
+        {/* Filter chips — Complete toggle + grade filters */}
         <div className="no-scrollbar" style={{ display: 'flex', gap: 6, padding: '10px 16px 0', overflowX: 'auto' }}>
+          {/* Complete toggle — to the left of grade chips */}
+          <button
+            onClick={() => setShowComplete(c => !c)}
+            style={{
+              flexShrink: 0, padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
+              fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', transition: 'all 0.15s',
+              background: showComplete ? 'var(--green)' : 'var(--surface)',
+              border: `1.5px solid ${showComplete ? 'var(--green)' : 'var(--border)'}`,
+              color: showComplete ? '#fff' : 'var(--text-2)',
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            ✓ Complete
+          </button>
           {gradeOptions.map(g => (
             <button
               key={g}
@@ -239,9 +255,9 @@ function ActiveTab() {
             {pickup.status === 'sent' && (
               <button
                 onClick={() => handleComplete(student)}
-                style={{ width: '100%', background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+                style={{ width: '100%', background: 'oklch(0.68 0.19 48)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
               >
-                ✓ Student Delivered — Complete
+                Mark as Delivered
               </button>
             )}
             {pickup.status === 'requested' && (
@@ -362,8 +378,6 @@ export function StaffView({ school, loginRole, onLogout }) {
   const [tab, setTab]           = useState('students')
   const [drillClass, setDrillClass] = useState(null)
 
-  // When drilling into a class from the Classes tab, show the drill screen
-  // regardless of which tab is active
   if (drillClass) {
     return (
       <AppShell school={school} loginRole={loginRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
