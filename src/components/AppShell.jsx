@@ -88,15 +88,11 @@ export function AppShell({ school, loginRole, viewRole, tab, onTabChange, onLogo
           {/* Logo / school name */}
           <div style={{ padding: '0 20px 24px', borderBottom: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{
-                width: 40, height: 40, background: 'var(--blue)', borderRadius: 10,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
-                  <path d="M6 26l7-14 7 8 5-6 9 12H6z" fill="white" opacity="0.9"/>
-                  <circle cx="32" cy="10" r="4" fill="white" opacity="0.6"/>
-                </svg>
-              </div>
+              <img
+                src="/favicon.png"
+                alt="CarLine"
+                style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
+              />
               <div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>CarLine</div>
                 <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
