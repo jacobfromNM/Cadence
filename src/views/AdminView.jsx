@@ -324,6 +324,144 @@ function AddClassWizard({ onBack, onDone }) {
   )
 }
 
+// ── Change PINs screen ────────────────────────────────────────
+function ChangePinScreen({ school, onBack }) {
+  const { updatePins } = useCarLine()
+  const { showToast }  = useToast()
+
+  const [latestAdminPin, setLatestAdminPin] = useState(school.admin_pin_hash)
+  const [latestStaffPin, setLatestStaffPin] = useState(school.staff_pin_hash)
+
+  const [adminNew,     setAdminNew]     = useState('')
+  const [adminConfirm, setAdminConfirm] = useState('')
+  const [adminError,   setAdminError]   = useState('')
+  const [adminSaving,  setAdminSaving]  = useState(false)
+
+  const [staffNew,     setStaffNew]     = useState('')
+  const [staffConfirm, setStaffConfirm] = useState('')
+  const [staffError,   setStaffError]   = useState('')
+  const [staffSaving,  setStaffSaving]  = useState(false)
+
+  const validatePin = (pin, confirm, otherPin, label) => {
+    if (!/^\d{4,6}$/.test(pin))        return `${label} must be 4–6 digits`
+    if (pin !== confirm)               return 'PINs do not match'
+    if (pin === otherPin)              return 'Admin and staff PINs must be different'
+    return null
+  }
+
+  const handleSaveAdmin = async () => {
+    const err = validatePin(adminNew, adminConfirm, latestStaffPin, 'Admin PIN')
+    if (err) { setAdminError(err); return }
+    setAdminError('')
+    setAdminSaving(true)
+    try {
+      await updatePins({ adminPin: adminNew })
+      setLatestAdminPin(adminNew)
+      setAdminNew('')
+      setAdminConfirm('')
+      showToast({ type: 'success', title: 'Admin PIN updated' })
+    } catch {
+      showToast({ type: 'error', title: 'Could not save PIN', sub: 'Check your connection and try again.' })
+    } finally {
+      setAdminSaving(false)
+    }
+  }
+
+  const handleSaveStaff = async () => {
+    const err = validatePin(staffNew, staffConfirm, latestAdminPin, 'Staff PIN')
+    if (err) { setStaffError(err); return }
+    setStaffError('')
+    setStaffSaving(true)
+    try {
+      await updatePins({ staffPin: staffNew })
+      setLatestStaffPin(staffNew)
+      setStaffNew('')
+      setStaffConfirm('')
+      showToast({ type: 'success', title: 'Staff PIN updated' })
+    } catch {
+      showToast({ type: 'error', title: 'Could not save PIN', sub: 'Check your connection and try again.' })
+    } finally {
+      setStaffSaving(false)
+    }
+  }
+
+  const card = (children) => (
+    <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {children}
+    </div>
+  )
+
+  const pinField = (label, value, onChange) => (
+    <div>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>{label}</label>
+      <Input
+        type="password"
+        mono
+        inputMode="numeric"
+        maxLength={6}
+        value={value}
+        onChange={e => onChange(e.target.value.replace(/\D/g, ''))}
+        placeholder="••••"
+        style={{ padding: '10px 12px', fontSize: 14 }}
+      />
+    </div>
+  )
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Change PINs</div>
+      </div>
+
+      <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+        {/* Admin PIN */}
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', marginBottom: 8 }}>Admin PIN</div>
+          {card(
+            <>
+              {pinField('New PIN', adminNew, setAdminNew)}
+              {pinField('Confirm New PIN', adminConfirm, setAdminConfirm)}
+              {adminError && <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 600 }}>{adminError}</div>}
+              <button
+                onClick={handleSaveAdmin}
+                disabled={adminSaving}
+                style={{ background: adminSaving ? 'var(--blue-mid)' : 'var(--blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, cursor: adminSaving ? 'default' : 'pointer' }}
+              >
+                {adminSaving ? 'Saving…' : 'Update Admin PIN'}
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Staff PIN */}
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', marginBottom: 8 }}>Staff PIN</div>
+          {card(
+            <>
+              {pinField('New PIN', staffNew, setStaffNew)}
+              {pinField('Confirm New PIN', staffConfirm, setStaffConfirm)}
+              {staffError && <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 600 }}>{staffError}</div>}
+              <button
+                onClick={handleSaveStaff}
+                disabled={staffSaving}
+                style={{ background: staffSaving ? 'var(--blue-mid)' : 'var(--blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, cursor: staffSaving ? 'default' : 'pointer' }}
+              >
+                {staffSaving ? 'Saving…' : 'Update Staff PIN'}
+              </button>
+            </>
+          )}
+        </div>
+
+        <div style={{ height: 16 }} />
+      </div>
+    </div>
+  )
+}
+
 // ── AdminView root ────────────────────────────────────────────
 export function AdminView({ school, loginRole, viewRole, onLogout }) {
   const { classes, students, resetClassroomData, deleteSchool } = useCarLine()
@@ -337,6 +475,7 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
 
   if (view === 'addClass') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
   if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
+  if (view === 'changePin') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><ChangePinScreen school={school} onBack={() => setView('menu')} /></AppShell>
 
   if (view === 'editClass') {
     return (
@@ -372,6 +511,7 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
   const menuItems = [
     { icon: '➕', label: 'Add a Class',  desc: 'Create a new class with teacher and students', action: () => setView('addClass') },
     { icon: '✏️', label: 'Edit Classes', desc: 'Update class info, students, or delete a class',  action: () => setView('editClass') },
+    ...(isAdmin ? [{ icon: '🔑', label: 'Change PINs', desc: 'Update admin or staff access PINs', action: () => setView('changePin') }] : []),
   ]
 
   return (

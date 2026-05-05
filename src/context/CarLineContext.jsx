@@ -441,6 +441,15 @@ export function CarLineProvider({ children }) {
     clearSchool()
   }, [schoolId, clearSchool])
 
+  const updatePins = useCallback(async ({ adminPin, staffPin }) => {
+    if (!schoolId) return
+    const updates = {}
+    if (adminPin !== undefined) updates.admin_pin_hash = adminPin
+    if (staffPin !== undefined) updates.staff_pin_hash = staffPin
+    const { error } = await supabase.from('schools').update(updates).eq('id', schoolId)
+    if (error) throw error
+  }, [schoolId])
+
   // ── Query helpers ──────────────────────────────────────────────────────
 
   const getClass        = useCallback((id) => classes.find(c => c.id === id), [classes])
@@ -479,7 +488,7 @@ export function CarLineProvider({ children }) {
       markAbsent, markPresent, isAbsent,
       addClass, editClass, deleteClass,
       addStudent, editStudent, deleteStudent,
-      resetClassroomData, deleteSchool,
+      resetClassroomData, deleteSchool, updatePins,
       getClass, studentsInClass, pickupsForClass, activePickups,
       formatTime, avgWaitMinutes,
     }}>
