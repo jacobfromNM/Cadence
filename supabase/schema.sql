@@ -94,6 +94,14 @@ create policy "allow_all_students"        on public.students        for all usin
 create policy "allow_all_pickup_requests" on public.pickup_requests for all using (true) with check (true);
 create policy "allow_all_absent_today"    on public.absent_today    for all using (true) with check (true);
 
+-- Grant table-level privileges to the anon and authenticated roles.
+-- RLS policies filter rows, but the role must also have GRANT access to touch the table.
+grant select, insert, update, delete on public.schools         to anon, authenticated;
+grant select, insert, update, delete on public.classes         to anon, authenticated;
+grant select, insert, update, delete on public.students        to anon, authenticated;
+grant select, insert, update, delete on public.pickup_requests to anon, authenticated;
+grant select, insert, update, delete on public.absent_today    to anon, authenticated;
+
 -- =============================================================
 -- Real-time
 -- Enable Supabase real-time on the tables that need live updates.
@@ -114,14 +122,15 @@ alter publication supabase_realtime add table public.students;
 -- Database → Extensions → pg_cron).
 -- =============================================================
 
--- select cron.schedule(
---   'clear-daily-data',
---   '0 5 * * *',   -- 5:00 AM UTC daily (adjust for your timezone)
---   $$
---     delete from public.absent_today where date < current_date;
---     delete from public.pickup_requests where completed_at < now() - interval '18 hours';
---   $$
--- );
+select cron.schedule(
+  'clear-daily-pickup-data',
+  '0 6 * * *',  -- 6:00 AM UTC = midnight Mountain Time (adjust if needed)
+  $$
+    delete from public.absent_today where date < current_date;
+    delete from public.pickup_requests
+      where completed_at < now() - interval '18 hours';
+  $$
+);
 
 -- =============================================================
 -- Seed data (optional — matches the mock data in src/lib/mockData.js)
