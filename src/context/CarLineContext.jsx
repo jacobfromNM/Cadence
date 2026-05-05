@@ -15,6 +15,7 @@ import React, {
   createContext, useContext, useState,
   useCallback, useEffect, useRef,
 } from 'react'
+import bcrypt from 'bcryptjs'
 import { supabase } from '../lib/supabase'
 
 const CarLineCtx = createContext(null)
@@ -437,6 +438,7 @@ export function CarLineProvider({ children }) {
 
   const deleteSchool = useCallback(async () => {
     if (!schoolId) return
+    // REQUIRES SERVICE ROLE after RLS tightening — move to Edge Function in Phase 2
     await supabase.from('schools').delete().eq('id', schoolId)
     clearSchool()
   }, [schoolId, clearSchool])
@@ -444,8 +446,9 @@ export function CarLineProvider({ children }) {
   const updatePins = useCallback(async ({ adminPin, staffPin }) => {
     if (!schoolId) return
     const updates = {}
-    if (adminPin !== undefined) updates.admin_pin_hash = adminPin
-    if (staffPin !== undefined) updates.staff_pin_hash = staffPin
+    if (adminPin !== undefined) updates.admin_pin_hash = await bcrypt.hash(adminPin, 10)
+    if (staffPin !== undefined) updates.staff_pin_hash = await bcrypt.hash(staffPin, 10)
+    // REQUIRES SERVICE ROLE after RLS tightening — move to Edge Function in Phase 2
     const { error } = await supabase.from('schools').update(updates).eq('id', schoolId)
     if (error) throw error
   }, [schoolId])

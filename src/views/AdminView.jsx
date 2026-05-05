@@ -329,8 +329,10 @@ function ChangePinScreen({ school, onBack }) {
   const { updatePins } = useCarLine()
   const { showToast }  = useToast()
 
-  const [latestAdminPin, setLatestAdminPin] = useState(school.admin_pin_hash)
-  const [latestStaffPin, setLatestStaffPin] = useState(school.staff_pin_hash)
+  // PINs are stored as bcrypt hashes — we can't recover plaintext, so we track
+  // newly-set PINs in plaintext within this session for cross-PIN validation only.
+  const [latestAdminPin, setLatestAdminPin] = useState('')
+  const [latestStaffPin, setLatestStaffPin] = useState('')
 
   const [adminNew,     setAdminNew]     = useState('')
   const [adminConfirm, setAdminConfirm] = useState('')

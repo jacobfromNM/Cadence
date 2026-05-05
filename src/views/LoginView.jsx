@@ -2,7 +2,7 @@
 // Login is now async — onLogin(code, pin) returns { error } from App.jsx
 // which validates against the Supabase schools table.
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Input } from '../components/ui'
 import privacyContent from '../../privacy-disclosure.md?raw'
 
@@ -125,14 +125,42 @@ function PrivacyModal({ onClose }) {
 
 // ---------------------------------------------------------------------------
 
+const MAX_ATTEMPTS  = 5
+const LOCKOUT_MS    = 30_000
+
 export function LoginView({ onLogin, onCreateSchool }) {
   const [code,         setCode]         = useState('')
   const [pin,          setPin]          = useState('')
   const [err,          setErr]          = useState('')
   const [loading,      setLoading]      = useState(false)
   const [privacyOpen,  setPrivacyOpen]  = useState(false)
+  const [attempts,     setAttempts]     = useState(0)
+  const [lockedUntil,  setLockedUntil]  = useState(null)
+  const [countdown,    setCountdown]    = useState(0)
+
+  // Tick countdown every second while locked out
+  useEffect(() => {
+    if (!lockedUntil) return
+    const tick = () => {
+      const remaining = Math.ceil((lockedUntil - Date.now()) / 1000)
+      if (remaining <= 0) {
+        setLockedUntil(null)
+        setAttempts(0)
+        setErr('')
+        setCountdown(0)
+      } else {
+        setCountdown(remaining)
+      }
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [lockedUntil])
+
+  const isLocked = !!lockedUntil
 
   const handleSubmit = async () => {
+    if (isLocked) return
     if (!code || !pin) { setErr('Please enter your school code and PIN.'); return }
     setLoading(true)
     setErr('')
@@ -140,13 +168,33 @@ export function LoginView({ onLogin, onCreateSchool }) {
     const { error } = await onLogin(code, pin)
 
     if (error) {
-      setErr(error)
+      const newAttempts = attempts + 1
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setLockedUntil(Date.now() + LOCKOUT_MS)
+        setAttempts(0)
+      } else {
+        setAttempts(newAttempts)
+        const rem = MAX_ATTEMPTS - newAttempts
+        const suffix = newAttempts > 1
+          ? ` (${rem} attempt${rem === 1 ? '' : 's'} remaining)`
+          : ''
+        setErr(error + suffix)
+      }
       setLoading(false)
+    } else {
+      // Successful login — reset rate-limit state
+      setAttempts(0)
+      setLockedUntil(null)
     }
     // On success App.jsx changes the screen — no action needed here
   }
 
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleSubmit() }
+
+  // While locked, the error area shows the countdown instead of the last error
+  const displayErr = isLocked
+    ? `Too many attempts. Try again in ${countdown} second${countdown === 1 ? '' : 's'}.`
+    : err
 
   return (
     <>
@@ -214,24 +262,24 @@ export function LoginView({ onLogin, onCreateSchool }) {
               />
             </div>
 
-            {err && (
+            {(displayErr) && (
               <div style={{
                 fontSize: 13, color: 'var(--red)', fontWeight: 500,
                 padding: '8px 12px', background: 'var(--red-light)', borderRadius: 8,
               }}>
-                {err}
+                {displayErr}
               </div>
             )}
 
             <button
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={loading || isLocked}
               style={{
-                background: loading ? 'var(--blue-mid)' : 'var(--blue)',
+                background: (loading || isLocked) ? 'var(--blue-mid)' : 'var(--blue)',
                 color: '#fff', border: 'none', borderRadius: 'var(--radius)',
                 padding: '15px', fontFamily: 'var(--font-body)',
                 fontSize: 16, fontWeight: 700,
-                cursor: loading ? 'default' : 'pointer',
+                cursor: (loading || isLocked) ? 'default' : 'pointer',
                 transition: 'background 0.15s', marginTop: 4,
               }}
             >

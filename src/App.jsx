@@ -9,6 +9,7 @@
 // real-time subscriptions for that school.
 
 import React, { useState } from 'react'
+import bcrypt from 'bcryptjs'
 import { CarLineProvider, useCarLine } from './context/CarLineContext'
 import { ToastProvider } from './context/ToastContext'
 import { ToastLayer } from './components/ui'
@@ -46,10 +47,14 @@ function InnerApp() {
       return { error: 'School code not recognised. Check with your administrator.' }
     }
 
-    // PIN check — plain text for now, bcrypt in a future hardening pass
+    // PIN check — bcrypt.compare handles both hashed and any legacy plain-text values
     let role = null
-    if (pin === schoolData.admin_pin_hash)       role = 'admin'
-    else if (pin === schoolData.staff_pin_hash)  role = 'staff'
+    const [isAdmin, isStaff] = await Promise.all([
+      bcrypt.compare(pin, schoolData.admin_pin_hash),
+      bcrypt.compare(pin, schoolData.staff_pin_hash),
+    ])
+    if (isAdmin)      role = 'admin'
+    else if (isStaff) role = 'staff'
 
     if (!role) {
       return { error: 'Incorrect PIN. Check with your school administrator.' }
@@ -80,6 +85,7 @@ function InnerApp() {
       return { error: `School code "${newSchool.code}" is already in use. Choose a different code.` }
     }
 
+    // REQUIRES SERVICE ROLE after RLS tightening — move to Edge Function in Phase 2
     const { data: inserted, error } = await supabase
       .from('schools')
       .insert({

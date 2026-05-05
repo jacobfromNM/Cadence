@@ -5,6 +5,7 @@
 // If the school code is already taken, the error is shown inline on step 3.
 
 import React, { useState, useRef } from 'react'
+import bcrypt from 'bcryptjs'
 import { Input } from '../components/ui'
 
 const STEP_LABELS = ['School Info', 'Set PINs', 'Review']
@@ -66,21 +67,30 @@ export function SetupView({ onComplete, onBack }) {
     if (step === 0) { if (validateStep1()) setStep(1) }
     else if (step === 1) { if (validateStep2()) setStep(2) }
     else {
-      // Step 3 — write to Supabase
+      // Step 3 — hash PINs then write to Supabase
       setSaving(true)
-      const school = {
-        name: schoolName.trim(),
-        code: schoolCode,
-        staff_pin_hash: staffPin,
-        admin_pin_hash: adminPin,
-      }
-      const result = await onComplete({ staffPin, adminPin, school })
-      // onComplete returns { error } if something went wrong (e.g. duplicate code)
-      if (result?.error) {
-        setErr(result.error)
+      try {
+        const [hashedAdminPin, hashedStaffPin] = await Promise.all([
+          bcrypt.hash(adminPin, 10),
+          bcrypt.hash(staffPin, 10),
+        ])
+        const school = {
+          name: schoolName.trim(),
+          code: schoolCode,
+          staff_pin_hash: hashedStaffPin,
+          admin_pin_hash: hashedAdminPin,
+        }
+        const result = await onComplete({ staffPin: hashedStaffPin, adminPin: hashedAdminPin, school })
+        // onComplete returns { error } if something went wrong (e.g. duplicate code)
+        if (result?.error) {
+          setErr(result.error)
+          setSaving(false)
+        }
+        // On success App.jsx changes the screen — nothing to do here
+      } catch {
+        setErr('An error occurred while securing your PINs. Please try again.')
         setSaving(false)
       }
-      // On success App.jsx changes the screen — nothing to do here
     }
   }
 
