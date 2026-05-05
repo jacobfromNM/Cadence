@@ -154,7 +154,11 @@ export function CarLineProvider({ children }) {
         event: 'INSERT', schema: 'public',
         table: 'students', filter: `school_id=eq.${id}`,
       }, ({ new: row }) => {
-        setStudents(prev => [...prev, row].sort((a, b) => a.name.localeCompare(b.name)))
+        setStudents(prev =>
+          prev.some(s => s.id === row.id)
+            ? prev
+            : [...prev, row].sort((a, b) => a.name.localeCompare(b.name))
+        )
       })
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public',
@@ -177,7 +181,11 @@ export function CarLineProvider({ children }) {
         event: 'INSERT', schema: 'public',
         table: 'classes', filter: `school_id=eq.${id}`,
       }, ({ new: row }) => {
-        setClasses(prev => [...prev, row].sort((a, b) => a.code.localeCompare(b.code)))
+        setClasses(prev =>
+          prev.some(c => c.id === row.id)
+            ? prev
+            : [...prev, row].sort((a, b) => a.code.localeCompare(b.code))
+        )
       })
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public',
