@@ -4,11 +4,12 @@
 // Admin: add/delete classes, edit class details, reset/delete school.
 // Staff: add/remove students within existing classes only.
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useCarLine } from '../context/CarLineContext'
 import { useToast } from '../context/ToastContext'
 import { Input, ConfirmBlock, SectionLabel } from '../components/ui'
 import { AppShell } from '../components/AppShell'
+import { supabase } from '../lib/supabase'
 
 // ── Student add form (one-by-one or paste a list) ─────────────
 function StudentAddForm({ classId, classes, onAdded }) {
@@ -482,6 +483,168 @@ function ChangePinScreen({ school, onBack }) {
   )
 }
 
+// ── Daily Analytics screen ────────────────────────────────────
+function AnalyticsScreen({ onBack }) {
+  const { schoolId, absent, classes } = useCarLine()
+  const [loading, setLoading]       = useState(true)
+  const [pickupRows, setPickupRows] = useState([])
+  const [lastFetched, setLastFetched] = useState(null)
+  const [fetchError, setFetchError] = useState(null)
+
+  const fetchData = async () => {
+    setLoading(true)
+    setFetchError(null)
+    try {
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+      const { data, error } = await supabase
+        .from('pickup_requests')
+        .select('*')
+        .eq('school_id', schoolId)
+        .gte('requested_at', todayStart.toISOString())
+      if (error) throw error
+      setPickupRows(data || [])
+      setLastFetched(new Date())
+    } catch (e) {
+      console.error('Analytics fetch failed:', e)
+      setFetchError('Could not load analytics. Check your connection.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchData() }, [])
+
+  const completed = pickupRows.filter(p => p.status === 'complete')
+  const active    = pickupRows.filter(p => p.status !== 'complete')
+
+  const waits = completed
+    .filter(p => p.requested_at && p.completed_at)
+    .map(p => (new Date(p.completed_at) - new Date(p.requested_at)) / 60000)
+  const avgWait = waits.length
+    ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length)
+    : null
+
+  const classCounts = {}
+  for (const p of pickupRows) {
+    if (p.class_id) classCounts[p.class_id] = (classCounts[p.class_id] || 0) + 1
+  }
+  const topClassEntry = Object.entries(classCounts).sort((a, b) => b[1] - a[1])[0]
+  const busiestClass  = topClassEntry ? classes.find(c => c.id === topClassEntry[0]) : null
+
+  const hourCounts = {}
+  for (const p of pickupRows) {
+    const h = new Date(p.requested_at).getHours()
+    hourCounts[h] = (hourCounts[h] || 0) + 1
+  }
+  const peakEntry = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]
+  const peakHour  = peakEntry ? parseInt(peakEntry[0]) : null
+
+  const formatHour = (h) => {
+    if (h === null) return '—'
+    const d = h % 12 || 12
+    return `${d}:00 ${h >= 12 ? 'PM' : 'AM'}`
+  }
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+        <div style={{ flex: 1, fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Daily Analytics</div>
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: loading ? 'default' : 'pointer', color: loading ? 'var(--text-3)' : 'var(--blue)', fontFamily: 'var(--font-body)' }}
+        >
+          {loading ? 'Loading…' : 'Refresh'}
+        </button>
+      </div>
+
+      <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Reset notice */}
+        <div style={{ background: 'var(--blue-light)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>ℹ️</span>
+          <div style={{ fontSize: 12, color: 'var(--blue)', lineHeight: 1.5 }}>
+            Data reflects today's activity. Pickup and absence records reset automatically every night at midnight Mountain Time.
+          </div>
+        </div>
+
+        {lastFetched && (
+          <div style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'right', marginTop: -4 }}>
+            Updated {lastFetched.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        )}
+
+        {fetchError ? (
+          <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: 20, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 14, color: 'var(--red)' }}>{fetchError}</div>
+            <button onClick={fetchData} style={{ background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 16px', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Retry</button>
+          </div>
+        ) : loading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-3)', fontSize: 14 }}>Loading…</div>
+        ) : (
+          <>
+            {/* Main stat grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {[
+                { label: 'Total Pickups',   value: pickupRows.length,                           color: 'var(--blue)',   bg: 'var(--blue-light)' },
+                { label: 'Students Absent', value: absent.size,                                 color: 'var(--red)',    bg: 'oklch(0.97 0.04 25)' },
+                { label: 'Completed',       value: completed.length,                            color: 'var(--green)',  bg: 'var(--green-light)' },
+                { label: 'Avg Wait Time',   value: avgWait !== null ? `${avgWait}m` : '—',      color: 'var(--text-2)', bg: 'var(--surface)' },
+              ].map(s => (
+                <div key={s.label} style={{ background: s.bg, borderRadius: 'var(--radius)', padding: '14px 16px', border: '1.5px solid var(--border)' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: s.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: s.color, lineHeight: 1.15, marginTop: 4 }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Active / in-transit */}
+            <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Active / In Transit</div>
+                <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>Pickups not yet completed</div>
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: active.length > 0 ? 'var(--blue)' : 'var(--text-3)' }}>{active.length}</div>
+            </div>
+
+            {/* Busiest class + peak hour */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Busiest Class</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: busiestClass ? 'var(--font-mono)' : 'inherit' }}>
+                  {busiestClass ? busiestClass.code : '—'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+                  {busiestClass ? `${topClassEntry[1]} pickup${topClassEntry[1] !== 1 ? 's' : ''}` : 'No data yet'}
+                </div>
+              </div>
+              <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Peak Hour</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{formatHour(peakHour)}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+                  {peakEntry ? `${peakEntry[1]} pickup${peakEntry[1] !== 1 ? 's' : ''}` : 'No data yet'}
+                </div>
+              </div>
+            </div>
+
+            {pickupRows.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-3)', fontSize: 14 }}>
+                No pickup activity recorded yet today.
+              </div>
+            )}
+          </>
+        )}
+        <div style={{ height: 16 }} />
+      </div>
+    </div>
+  )
+}
+
 // ── AdminView root ────────────────────────────────────────────
 export function AdminView({ school, loginRole, viewRole, onLogout }) {
   const { classes, students, resetClassroomData, deleteSchool } = useCarLine()
@@ -496,6 +659,7 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
   if (view === 'addClass') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
   if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
   if (view === 'changePin') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><ChangePinScreen school={school} onBack={() => setView('menu')} /></AppShell>
+  if (view === 'analytics') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AnalyticsScreen onBack={() => setView('menu')} /></AppShell>
 
   if (view === 'editClass') {
     return (
@@ -529,9 +693,12 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
 
   // Main menu
   const menuItems = [
-    { icon: '➕', label: 'Add a Class',  desc: 'Create a new class with teacher and students', action: () => setView('addClass') },
-    { icon: '✏️', label: 'Edit Classes', desc: 'Update class info, students, or delete a class',  action: () => setView('editClass') },
-    ...(isAdmin ? [{ icon: '🔑', label: 'Change PINs', desc: 'Update admin or staff access PINs', action: () => setView('changePin') }] : []),
+    { icon: '➕', label: 'Add a Class',      desc: 'Create a new class with teacher and students',      action: () => setView('addClass') },
+    { icon: '✏️', label: 'Edit Classes',     desc: 'Update class info, students, or delete a class',    action: () => setView('editClass') },
+    ...(isAdmin ? [
+      { icon: '📊', label: 'Daily Analytics', desc: "Today's pickups, absences, wait times, and trends", action: () => setView('analytics') },
+      { icon: '🔑', label: 'Change PINs',     desc: 'Update admin or staff access PINs',                action: () => setView('changePin') },
+    ] : []),
   ]
 
   return (

@@ -100,20 +100,19 @@ If your school district requires a Data Processing Agreement (DPA) or similar fo
 CarLine implements the following security measures:
 
 - All data transmission is encrypted via HTTPS/TLS
-- Access to school data requires a numeric PIN known only to authorized staff
+- Access to school data requires a numeric PIN, stored as a bcrypt hash, known only to authorized staff
+- Login attempts are rate-limited: after 5 consecutive failed attempts, the login form is locked for 30 seconds to prevent brute-force attacks
 - Row Level Security is enabled on the database
 - Daily automatic deletion of transient pickup and absence data
 
 **Known limitations and risks the user should be aware of:**
 
-- Staff PINs are currently stored in the database without cryptographic hashing. This means that in the event of a database breach, PINs would be directly readable. Users should not reuse PINs from other systems.
 - The application uses a shared PIN model rather than individual user accounts. This means activity cannot be attributed to a specific individual staff member.
-- No rate limiting is currently enforced on login attempts.
 - The application has not undergone a formal third-party security audit.
 
 CarLine is provided as a best-effort tool by an independent developer. **No warranty is made regarding the security, availability, or integrity of the application or the data stored within it.**
 
-Users are encouraged to use PINs that are not reused from other systems and to notify the developer immediately at [your contact email] if they suspect unauthorized access to their school's data.
+Users are encouraged to use PINs that are not reused from other systems and to notify the developer immediately at jacobfromnm@gmail.com if they suspect unauthorized access to their school's data.
 
 ---
 
