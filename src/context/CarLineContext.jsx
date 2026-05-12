@@ -22,15 +22,17 @@ const CarLineCtx = createContext(null)
 
 export function CarLineProvider({ children }) {
   // schoolId is null until login — no data fetched until then
-  const [schoolId,  setSchoolId]  = useState(null)
-  const [classes,   setClasses]   = useState([])
-  const [students,  setStudents]  = useState([])
+  const [schoolId,      setSchoolId]      = useState(null)
+  const [classes,       setClasses]       = useState([])
+  const [students,      setStudents]      = useState([])
   // pickups: { [studentId]: { id, status, requested_at, sent_at, completed_at, ... } }
-  const [pickups,   setPickups]   = useState({})
+  const [pickups,       setPickups]       = useState({})
   // absent: Set of student IDs marked absent today
-  const [absent,    setAbsent]    = useState(new Set())
-  const [loading,   setLoading]   = useState(false)
-  const [error,     setError]     = useState(null)
+  const [absent,        setAbsent]        = useState(new Set())
+  // parentNearby: { [studentId]: parent_nearby_row } — only active (dismissed_at IS NULL) rows
+  const [parentNearby,  setParentNearby]  = useState({})
+  const [loading,       setLoading]       = useState(false)
+  const [error,         setError]         = useState(null)
 
   // Track active Supabase channels so we can clean up on logout
   const channelsRef = useRef([])
@@ -45,7 +47,7 @@ export function CarLineProvider({ children }) {
       const today = new Date().toISOString().slice(0, 10)
 
       // Fetch everything for this school in parallel
-      const [classRes, studentRes, pickupRes, absentRes] = await Promise.all([
+      const [classRes, studentRes, pickupRes, absentRes, nearbyRes] = await Promise.all([
         supabase.from('classes')
           .select('*')
           .eq('school_id', id)
@@ -62,12 +64,19 @@ export function CarLineProvider({ children }) {
           .select('student_id')
           .eq('school_id', id)
           .eq('date', today),
+        supabase.from('parent_nearby')
+          .select('*')
+          .eq('school_id', id)
+          .is('dismissed_at', null)
+          .is('converted_at', null)
+          .gte('created_at', today + 'T00:00:00.000Z'),
       ])
 
       if (classRes.error)   throw classRes.error
       if (studentRes.error) throw studentRes.error
       if (pickupRes.error)  throw pickupRes.error
       if (absentRes.error)  throw absentRes.error
+      if (nearbyRes.error)  throw nearbyRes.error
 
       setClasses(classRes.data)
       setStudents(studentRes.data)
@@ -78,6 +87,11 @@ export function CarLineProvider({ children }) {
       setPickups(pickupMap)
 
       setAbsent(new Set(absentRes.data.map(r => r.student_id)))
+
+      // Convert parent_nearby rows into { [studentId]: row } map
+      const nearbyMap = {}
+      nearbyRes.data.forEach(r => { nearbyMap[r.student_id] = r })
+      setParentNearby(nearbyMap)
     } catch (err) {
       console.error('CarLine initSchool error:', err)
       setError(err.message)
@@ -95,6 +109,7 @@ export function CarLineProvider({ children }) {
     setStudents([])
     setPickups({})
     setAbsent(new Set())
+    setParentNearby({})
     channelsRef.current.forEach(ch => supabase.removeChannel(ch))
     channelsRef.current = []
   }, [])
@@ -202,7 +217,41 @@ export function CarLineProvider({ children }) {
       })
       .subscribe()
 
-    channelsRef.current = [pickupCh, absentCh, studentCh, classCh]
+    // parent_nearby — staff/teachers see incoming parent alerts instantly
+    const nearbyHandler = ({ new: row, old: oldRow, eventType }) => {
+      if (eventType === 'DELETE') {
+        setParentNearby(prev => {
+          const n = { ...prev }
+          Object.keys(n).forEach(k => { if (n[k].id === oldRow.id) delete n[k] })
+          return n
+        })
+        return
+      }
+      // Keep only active rows (no dismissed_at or converted_at)
+      if (row.dismissed_at || row.converted_at) {
+        setParentNearby(prev => {
+          const n = { ...prev }
+          Object.keys(n).forEach(k => { if (n[k].id === row.id) delete n[k] })
+          return n
+        })
+      } else {
+        setParentNearby(prev => ({ ...prev, [row.student_id]: row }))
+      }
+    }
+
+    const nearbyCh = supabase
+      .channel(`parent_nearby:${id}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public',
+        table: 'parent_nearby', filter: `school_id=eq.${id}`,
+      }, ({ new: row }) => nearbyHandler({ new: row, old: null, eventType: 'INSERT' }))
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public',
+        table: 'parent_nearby', filter: `school_id=eq.${id}`,
+      }, ({ new: row }) => nearbyHandler({ new: row, old: null, eventType: 'UPDATE' }))
+      .subscribe()
+
+    channelsRef.current = [pickupCh, absentCh, studentCh, classCh, nearbyCh]
   }
 
   // Clean up when the provider unmounts
@@ -305,6 +354,69 @@ export function CarLineProvider({ children }) {
     }
   }, [pickups])
 
+  // ── Parent Nearby actions ──────────────────────────────────────────────
+
+  const reportParentNearby = useCallback(async (sid, studentId) => {
+    // Guard: skip if there's already an active alert for this student today
+    const { data: existing } = await supabase
+      .from('parent_nearby')
+      .select('id')
+      .eq('school_id', sid)
+      .eq('student_id', studentId)
+      .is('dismissed_at', null)
+      .is('converted_at', null)
+      .maybeSingle()
+
+    if (existing) return
+
+    const { data, error } = await supabase
+      .from('parent_nearby')
+      .insert({ school_id: sid, student_id: studentId })
+      .select()
+      .single()
+
+    if (error) throw error
+    setParentNearby(prev => ({ ...prev, [studentId]: data }))
+  }, [])
+
+  const dismissParentNearby = useCallback(async (studentId) => {
+    const current = parentNearby[studentId]
+    if (!current?.id) return
+
+    setParentNearby(prev => { const n = { ...prev }; delete n[studentId]; return n })
+
+    const { error } = await supabase
+      .from('parent_nearby')
+      .update({ dismissed_at: new Date().toISOString() })
+      .eq('id', current.id)
+
+    if (error) {
+      setParentNearby(prev => ({ ...prev, [studentId]: current }))
+      throw error
+    }
+  }, [parentNearby])
+
+  const convertParentNearby = useCallback(async (studentId) => {
+    const current = parentNearby[studentId]
+    if (!current?.id) return
+
+    setParentNearby(prev => { const n = { ...prev }; delete n[studentId]; return n })
+
+    const [updateRes] = await Promise.all([
+      supabase.from('parent_nearby')
+        .update({ converted_at: new Date().toISOString() })
+        .eq('id', current.id),
+    ])
+
+    if (updateRes.error) {
+      setParentNearby(prev => ({ ...prev, [studentId]: current }))
+      throw updateRes.error
+    }
+
+    // Create the pickup request after marking converted
+    await requestPickup(studentId)
+  }, [parentNearby, requestPickup])
+
   // ── Absence actions ────────────────────────────────────────────────────
 
   const markAbsent = useCallback(async (studentId) => {
@@ -386,14 +498,30 @@ export function CarLineProvider({ children }) {
     const targetSchoolId = sid || schoolId
     const trimmed = name.trim()
 
+    // Generate a unique 6-digit parent_code for this school
+    let parentCode
+    let codeExists = true
+    while (codeExists) {
+      parentCode = String(Math.floor(100000 + Math.random() * 900000))
+      const { data: found } = await supabase
+        .from('students')
+        .select('id')
+        .eq('school_id', targetSchoolId)
+        .eq('parent_code', parentCode)
+        .maybeSingle()
+      codeExists = !!found
+    }
+
     // Upsert so re-importing the same roster doesn't create duplicates.
     // The unique constraint (school_id, class_id, name) lives in the schema;
     // on conflict we do a no-op update so the row (and its id) is returned.
+    // Note: on conflict we don't overwrite the parent_code so existing parents
+    // aren't disrupted by re-imports.
     const { data, error } = await supabase
       .from('students')
       .upsert(
-        { name: trimmed, class_id: classId, school_id: targetSchoolId },
-        { onConflict: 'school_id,class_id,name' }
+        { name: trimmed, class_id: classId, school_id: targetSchoolId, parent_code: parentCode },
+        { onConflict: 'school_id,class_id,name', ignoreDuplicates: true }
       )
       .select()
       .single()
@@ -485,9 +613,10 @@ export function CarLineProvider({ children }) {
   return (
     <CarLineCtx.Provider value={{
       schoolId, loading, error,
-      classes, students, pickups, absent,
+      classes, students, pickups, absent, parentNearby,
       initSchool, clearSchool,
       requestPickup, sendStudent, completePickup, cancelPickup,
+      reportParentNearby, dismissParentNearby, convertParentNearby,
       markAbsent, markPresent, isAbsent,
       addClass, editClass, deleteClass,
       addStudent, editStudent, deleteStudent,

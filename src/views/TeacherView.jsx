@@ -5,6 +5,7 @@ import { useCarLine } from '../context/CarLineContext'
 import { useToast } from '../context/ToastContext'
 import { Avatar, StatusPill, EmptyState, SectionLabel } from '../components/ui'
 import { AppShell } from '../components/AppShell'
+import { ParentNearbyAlert } from '../components/ParentNearbyAlert'
 
 // Ticks every 10 seconds so wait-time badges stay fresh
 function useNow() {
@@ -57,6 +58,7 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
 
     return (
       <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+        <ParentNearbyAlert />
         <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
 
           {/* Cross-class active summary */}
@@ -160,6 +162,7 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
 
   return (
     <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+      <ParentNearbyAlert />
       {/* Class header */}
       <div style={{
         padding: '14px 16px 12px',

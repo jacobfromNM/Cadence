@@ -22,6 +22,8 @@ create table public.schools (
   code            text not null unique,         -- e.g. 'MESA-ELEM'
   staff_pin_hash  text not null,                -- bcrypt hash in production
   admin_pin_hash  text not null,
+  latitude        numeric,                      -- school GPS for parent geofencing
+  longitude       numeric,
   created_at      timestamptz default now()
 );
 
@@ -41,9 +43,22 @@ create table public.students (
   school_id   uuid not null references public.schools(id) on delete cascade,
   class_id    uuid not null references public.classes(id) on delete cascade,
   name        text not null,
+  parent_code text,                             -- auto-generated 6-digit code for parent login
   created_at  timestamptz default now(),
   -- Prevents duplicate names within the same class on re-import
-  unique(school_id, class_id, name)
+  unique(school_id, class_id, name),
+  unique(school_id, parent_code)
+);
+
+-- ── Parent Nearby ─────────────────────────────────────────────
+-- Written by parent device when within geofence; read by staff/teachers.
+create table public.parent_nearby (
+  id           uuid primary key default gen_random_uuid(),
+  school_id    uuid not null references public.schools(id) on delete cascade,
+  student_id   uuid not null references public.students(id) on delete cascade,
+  created_at   timestamptz not null default now(),
+  dismissed_at timestamptz,    -- NULL = active alert
+  converted_at timestamptz     -- set when staff converts to a pickup request
 );
 
 -- ── Pickup Requests ───────────────────────────────────────────
@@ -96,6 +111,7 @@ alter table public.classes          enable row level security;
 alter table public.students         enable row level security;
 alter table public.pickup_requests  enable row level security;
 alter table public.absent_today     enable row level security;
+alter table public.parent_nearby    enable row level security;
 
 -- For now: allow all authenticated users to read/write their own school's data.
 -- In production you would scope this to a school_id claim in the JWT.
@@ -106,6 +122,7 @@ create policy "allow_all_classes"         on public.classes         for all usin
 create policy "allow_all_students"        on public.students        for all using (true) with check (true);
 create policy "allow_all_pickup_requests" on public.pickup_requests for all using (true) with check (true);
 create policy "allow_all_absent_today"    on public.absent_today    for all using (true) with check (true);
+create policy "allow_all_parent_nearby"   on public.parent_nearby   for all using (true) with check (true);
 
 -- Grant table-level privileges to the anon and authenticated roles.
 -- RLS policies filter rows, but the role must also have GRANT access to touch the table.
@@ -114,6 +131,7 @@ grant select, insert, update, delete on public.classes         to anon, authenti
 grant select, insert, update, delete on public.students        to anon, authenticated;
 grant select, insert, update, delete on public.pickup_requests to anon, authenticated;
 grant select, insert, update, delete on public.absent_today    to anon, authenticated;
+grant select, insert, update, delete on public.parent_nearby   to anon, authenticated;
 
 -- =============================================================
 -- Real-time
@@ -127,6 +145,7 @@ alter publication supabase_realtime add table public.absent_today;
 alter publication supabase_realtime add table public.students;
 -- classes must be in the publication so the client subscription fires
 alter publication supabase_realtime add table public.classes;
+alter publication supabase_realtime add table public.parent_nearby;
 
 -- =============================================================
 -- Nightly cleanup (optional but recommended)
@@ -160,6 +179,27 @@ select cron.schedule(
 --     on public.absent_today(school_id, date);
 --
 --   alter publication supabase_realtime add table public.classes;
+--
+-- Parent Nearby feature (added later):
+--
+--   alter table public.schools add column latitude numeric;
+--   alter table public.schools add column longitude numeric;
+--
+--   alter table public.students add column parent_code text;
+--   alter table public.students add constraint students_school_id_parent_code_key unique (school_id, parent_code);
+--
+--   create table public.parent_nearby (
+--     id           uuid primary key default gen_random_uuid(),
+--     school_id    uuid not null references public.schools(id) on delete cascade,
+--     student_id   uuid not null references public.students(id) on delete cascade,
+--     created_at   timestamptz not null default now(),
+--     dismissed_at timestamptz,
+--     converted_at timestamptz
+--   );
+--   alter table public.parent_nearby enable row level security;
+--   create policy "allow_all_parent_nearby" on public.parent_nearby for all using (true) with check (true);
+--   grant select, insert, update, delete on public.parent_nearby to anon, authenticated;
+--   alter publication supabase_realtime add table public.parent_nearby;
 -- =============================================================
 
 -- =============================================================

@@ -8,6 +8,7 @@ import { useCarLine } from '../context/CarLineContext'
 import { useToast } from '../context/ToastContext'
 import { Avatar, StatusPill, EmptyState, SectionLabel, SearchBar } from '../components/ui'
 import { AppShell } from '../components/AppShell'
+import { ParentNearbyAlert } from '../components/ParentNearbyAlert'
 
 // ── Shared back-button header used in drill-down screens ──────
 function ScreenHeader({ onBack, title, subtitle, right }) {
@@ -388,6 +389,7 @@ export function StaffView({ school, loginRole, viewRole, onLogout }) {
 
   return (
     <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
+      <ParentNearbyAlert />
       {tab === 'students' && <StudentsTab onDrillClass={setDrillClass} />}
       {tab === 'active'   && <ActiveTab />}
       {tab === 'classes'  && <ClassesTab onDrill={setDrillClass} />}

@@ -19,17 +19,26 @@ import { StaffView } from './views/StaffView'
 import { TeacherView } from './views/TeacherView'
 import { AdminView } from './views/AdminView'
 import { SetupView } from './views/SetupView'
+import { ParentLoginView } from './views/ParentLoginView'
+import { ParentView } from './views/ParentView'
 import { supabase } from './lib/supabase'
 
 // ── Inner app — needs access to CarLineProvider context ───────
 function InnerApp() {
   const { initSchool, clearSchool, loading } = useCarLine()
 
-  const [screen,    setScreen]    = useState('login')
-  const [loginRole, setLoginRole] = useState(null)   // 'staff' | 'admin' — the PIN used to log in
-  const [viewRole,  setViewRole]  = useState(null)   // 'staff' | 'teacher' | 'admin' — which view was selected
-  const [school,    setSchool]    = useState(null)
-  const [authError, setAuthError] = useState('')
+  // If URL has ?school= and ?student= params, jump straight to parent login
+  const urlParams   = new URLSearchParams(window.location.search)
+  const hasParentUrl = urlParams.has('school') && urlParams.has('student')
+
+  const [screen,      setScreen]      = useState(hasParentUrl ? 'parentLogin' : 'login')
+  const [loginRole,   setLoginRole]   = useState(null)   // 'staff' | 'admin' — the PIN used to log in
+  const [viewRole,    setViewRole]    = useState(null)   // 'staff' | 'teacher' | 'admin' — which view was selected
+  const [school,      setSchool]      = useState(null)
+  const [authError,   setAuthError]   = useState('')
+  // Parent session state
+  const [parentSchool,     setParentSchool]     = useState(null)
+  const [parentStudentIds, setParentStudentIds] = useState([])
 
   // Called by LoginView after the user enters a school code + PIN.
   // Looks up the school in Supabase and validates the PIN.
@@ -124,6 +133,19 @@ function InnerApp() {
     setSchool(null)
   }
 
+  // Parent login — no initSchool needed; parent view fetches only what it needs
+  const handleParentLogin = ({ school: s, studentIds }) => {
+    setParentSchool(s)
+    setParentStudentIds(studentIds)
+    setScreen('parent')
+  }
+
+  const handleParentLogout = () => {
+    setParentSchool(null)
+    setParentStudentIds([])
+    setScreen('parentLogin')
+  }
+
   const handleBackToRole = () => setScreen('role')
 
   return (
@@ -134,6 +156,22 @@ function InnerApp() {
         <LoginView
           onLogin={handleLogin}
           onCreateSchool={() => setScreen('setup')}
+          onParentLogin={() => setScreen('parentLogin')}
+        />
+      )}
+
+      {screen === 'parentLogin' && (
+        <ParentLoginView
+          onLogin={handleParentLogin}
+          onBack={() => setScreen('login')}
+        />
+      )}
+
+      {screen === 'parent' && parentSchool && (
+        <ParentView
+          school={parentSchool}
+          initialStudentIds={parentStudentIds}
+          onLogout={handleParentLogout}
         />
       )}
 

@@ -128,7 +128,7 @@ function PrivacyModal({ onClose }) {
 const MAX_ATTEMPTS  = 5
 const LOCKOUT_MS    = 30_000
 
-export function LoginView({ onLogin, onCreateSchool }) {
+export function LoginView({ onLogin, onCreateSchool, onParentLogin }) {
   const [code,         setCode]         = useState('')
   const [pin,          setPin]          = useState('')
   const [err,          setErr]          = useState('')
@@ -317,6 +317,22 @@ export function LoginView({ onLogin, onCreateSchool }) {
               Data &amp; Privacy Disclosure
             </button>
           </div>
+
+          {/* Parent login link */}
+          {onParentLogin && (
+            <div style={{ marginTop: 14, textAlign: 'center' }}>
+              <button
+                onClick={onParentLogin}
+                style={{
+                  background: 'none', border: 'none', padding: 0,
+                  fontSize: 13, fontWeight: 600, color: 'var(--blue)',
+                  cursor: 'pointer', fontFamily: 'var(--font-body)',
+                }}
+              >
+                I'm a parent →
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

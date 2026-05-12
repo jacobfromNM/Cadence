@@ -1,0 +1,248 @@
+// src/views/ParentView.jsx
+//
+// Parent-facing screen. Requests geolocation and reports to staff when
+// the parent is within NEARBY_METERS of the school.
+// Parents can also add additional student codes (siblings) from this screen.
+
+import React, { useState, useEffect, useRef } from 'react'
+import { supabase } from '../lib/supabase'
+import { haversineMeters } from '../lib/haversine'
+
+const NEARBY_METERS  = 400
+const STORAGE_KEY    = 'carline_parent_students'
+
+function loadStoredIds() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
+}
+
+function saveIds(ids) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)) } catch {}
+}
+
+export function ParentView({ school, initialStudentIds, onLogout }) {
+  const [studentIds, setStudentIds] = useState(() => {
+    // Merge initial ids with any previously stored (sibling) ids for this session
+    const stored = loadStoredIds()
+    const merged = [...new Set([...initialStudentIds, ...stored])]
+    saveIds(merged)
+    return merged
+  })
+  const [students,    setStudents]    = useState([])
+  const [status,      setStatus]      = useState('idle')  // idle | locating | nearby | error
+  const [locationErr, setLocationErr] = useState('')
+  // Sibling add form
+  const [siblingCode, setSiblingCode] = useState('')
+  const [siblingErr,  setSiblingErr]  = useState('')
+  const [siblingLoading, setSiblingLoading] = useState(false)
+  const [showSiblingForm, setShowSiblingForm] = useState(false)
+
+  const notifiedIds = useRef(new Set())
+
+  // Fetch student details whenever studentIds changes
+  useEffect(() => {
+    if (!studentIds.length) return
+    supabase
+      .from('students')
+      .select('id, name, class_id')
+      .in('id', studentIds)
+      .then(({ data }) => { if (data) setStudents(data) })
+  }, [studentIds])
+
+  // Geolocation watcher
+  useEffect(() => {
+    if (!school.latitude || !school.longitude) {
+      setStatus('error')
+      setLocationErr('School location is not configured yet. Ask your school admin to set it up.')
+      return
+    }
+    if (!navigator.geolocation) {
+      setStatus('error')
+      setLocationErr('Your browser does not support location services.')
+      return
+    }
+
+    setStatus('locating')
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const dist = haversineMeters(
+          { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
+          { latitude: Number(school.latitude), longitude: Number(school.longitude) }
+        )
+        if (dist < NEARBY_METERS) {
+          // Notify for each student that hasn't been notified yet this session
+          studentIds.forEach(id => {
+            if (!notifiedIds.current.has(id)) {
+              notifiedIds.current.add(id)
+              supabase
+                .from('parent_nearby')
+                .select('id')
+                .eq('school_id', school.id)
+                .eq('student_id', id)
+                .is('dismissed_at', null)
+                .is('converted_at', null)
+                .maybeSingle()
+                .then(({ data: existing }) => {
+                  if (!existing) {
+                    supabase.from('parent_nearby').insert({ school_id: school.id, student_id: id }).then()
+                  }
+                })
+            }
+          })
+          setStatus('nearby')
+        } else if (status !== 'nearby') {
+          setStatus('locating')
+        }
+      },
+      (err) => {
+        setStatus('error')
+        setLocationErr(
+          err.code === 1
+            ? 'Location access was denied. Enable location permissions in your browser settings.'
+            : err.message
+        )
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentIds, school])
+
+  const handleAddSibling = async () => {
+    const code = siblingCode.trim()
+    if (!code) return
+    setSiblingErr('')
+    setSiblingLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name')
+        .eq('school_id', school.id)
+        .eq('parent_code', code)
+        .maybeSingle()
+
+      if (error || !data) {
+        setSiblingErr('Student code not found at this school.')
+        return
+      }
+      if (studentIds.includes(data.id)) {
+        setSiblingErr('That student is already linked.')
+        return
+      }
+
+      const updated = [...studentIds, data.id]
+      setStudentIds(updated)
+      saveIds(updated)
+      setSiblingCode('')
+      setShowSiblingForm(false)
+    } catch {
+      setSiblingErr('Something went wrong. Try again.')
+    } finally {
+      setSiblingLoading(false)
+    }
+  }
+
+  const handleLogout = () => {
+    saveIds([])
+    notifiedIds.current.clear()
+    onLogout()
+  }
+
+  const statusConfig = {
+    idle:     { bg: 'var(--surface)', border: 'var(--border)', icon: '📍', color: 'var(--text-2)', text: 'Allow location access to notify pickup staff when you arrive.' },
+    locating: { bg: 'var(--blue-light)', border: 'var(--blue)', icon: '📡', color: 'var(--blue)', text: 'Watching your location — staff will be notified when you\'re nearby.' },
+    nearby:   { bg: 'var(--green-light)', border: 'var(--green)', icon: '✅', color: 'var(--green)', text: 'Staff have been notified — pull up to the pickup zone.' },
+    error:    { bg: 'oklch(0.97 0.04 25)', border: 'var(--red)', icon: '⚠️', color: 'var(--red)', text: locationErr },
+  }
+  const s = statusConfig[status]
+
+  return (
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      {/* Header */}
+      <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 20 }}>🚗</span>
+          <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>CarLine</span>
+          <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 2 }}>Parent</span>
+        </div>
+        <button
+          onClick={handleLogout}
+          style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+        >
+          Sign Out
+        </button>
+      </div>
+
+      <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* School name */}
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{school.name}</div>
+
+        {/* Status banner */}
+        <div style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 'var(--radius)', padding: '16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <span style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</span>
+          <div style={{ fontSize: 14, color: s.color, lineHeight: 1.5, fontWeight: status === 'nearby' ? 700 : 400 }}>{s.text}</div>
+        </div>
+
+        {/* Student cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>
+            {students.length === 1 ? 'Your Student' : 'Your Students'}
+          </div>
+          {students.map(stu => (
+            <div key={stu.id} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blue-light)', color: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
+                {stu.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{stu.name}</div>
+                {status === 'nearby' && (
+                  <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 600, marginTop: 2 }}>Staff notified</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Add sibling */}
+        {!showSiblingForm ? (
+          <button
+            onClick={() => setShowSiblingForm(true)}
+            style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left', padding: 0 }}
+          >
+            + Add another student (sibling)
+          </button>
+        ) : (
+          <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Add Sibling</div>
+            <input
+              value={siblingCode}
+              onChange={e => { setSiblingCode(e.target.value.replace(/\D/g, '')); setSiblingErr('') }}
+              onKeyDown={e => e.key === 'Enter' && handleAddSibling()}
+              placeholder="Student code"
+              inputMode="numeric"
+              maxLength={10}
+              style={{ background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--text)', outline: 'none', letterSpacing: '0.1em' }}
+            />
+            {siblingErr && <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 600 }}>{siblingErr}</div>}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={handleAddSibling}
+                disabled={siblingLoading || !siblingCode}
+                style={{ flex: 1, background: siblingLoading || !siblingCode ? 'var(--blue-mid)' : 'var(--blue)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, cursor: siblingLoading || !siblingCode ? 'default' : 'pointer' }}
+              >
+                {siblingLoading ? 'Checking…' : 'Add'}
+              </button>
+              <button
+                onClick={() => { setShowSiblingForm(false); setSiblingErr(''); setSiblingCode('') }}
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: 14, cursor: 'pointer', color: 'var(--text-2)' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

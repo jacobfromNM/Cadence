@@ -5,6 +5,7 @@
 // Staff: add/remove students within existing classes only.
 
 import React, { useState, useEffect } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { useCarLine } from '../context/CarLineContext'
 import { useToast } from '../context/ToastContext'
 import { Input, ConfirmBlock, SectionLabel } from '../components/ui'
@@ -113,8 +114,173 @@ function StudentAddForm({ classId, classes, onAdded }) {
   )
 }
 
+// ── School location screen ────────────────────────────────────
+function SchoolLocationScreen({ school, onBack, onSaved }) {
+  const { showToast } = useToast()
+  const [lat, setLat]         = useState(school.latitude  ? String(school.latitude)  : '')
+  const [lng, setLng]         = useState(school.longitude ? String(school.longitude) : '')
+  const [detecting, setDetecting] = useState(false)
+  const [showManual, setShowManual] = useState(false)
+  const [saving, setSaving]   = useState(false)
+  const hasSaved = school.latitude && school.longitude
+
+  const detect = () => {
+    if (!navigator.geolocation) {
+      showToast({ type: 'error', title: 'Geolocation not supported', sub: 'Enter coordinates manually.' })
+      setShowManual(true)
+      return
+    }
+    setDetecting(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(String(pos.coords.latitude))
+        setLng(String(pos.coords.longitude))
+        setDetecting(false)
+        showToast({ type: 'success', title: 'Location detected', sub: 'Tap Save to confirm.' })
+      },
+      (err) => {
+        setDetecting(false)
+        showToast({ type: 'error', title: 'Could not detect location', sub: err.message })
+        setShowManual(true)
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    )
+  }
+
+  const handleSave = async () => {
+    const latitude  = parseFloat(lat)
+    const longitude = parseFloat(lng)
+    if (isNaN(latitude) || isNaN(longitude)) {
+      showToast({ type: 'error', title: 'Invalid coordinates' })
+      return
+    }
+    setSaving(true)
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .update({ latitude, longitude })
+        .eq('id', school.id)
+      if (error) throw error
+      onSaved({ latitude, longitude })
+      showToast({ type: 'success', title: 'School location saved' })
+    } catch {
+      showToast({ type: 'error', title: 'Could not save location', sub: 'Check your connection and try again.' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const card = (children) => (
+    <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {children}
+    </div>
+  )
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>School Location</div>
+      </div>
+      <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          Set your school's GPS location so the app knows when parents are nearby (within ~400m / ¼ mile).
+        </div>
+
+        {hasSaved && !lat.startsWith('') && (
+          <div style={{ background: 'var(--green-light)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--green)', fontWeight: 600 }}>
+            Location saved — {parseFloat(school.latitude).toFixed(5)}, {parseFloat(school.longitude).toFixed(5)}
+          </div>
+        )}
+
+        {card(
+          <>
+            <button
+              onClick={detect}
+              disabled={detecting}
+              style={{ background: detecting ? 'var(--blue-mid)' : 'var(--blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, cursor: detecting ? 'default' : 'pointer' }}
+            >
+              {detecting ? 'Detecting location…' : 'Detect My Location'}
+            </button>
+            <button
+              onClick={() => setShowManual(v => !v)}
+              style={{ background: 'none', border: 'none', color: 'var(--blue)', fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer', padding: 0, textAlign: 'left' }}
+            >
+              {showManual ? 'Hide manual entry' : 'Enter coordinates manually'}
+            </button>
+            {showManual && (
+              <>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Latitude</label>
+                  <Input mono value={lat} onChange={e => setLat(e.target.value)} placeholder="e.g. 35.08765" style={{ padding: '10px 12px', fontSize: 14 }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Longitude</label>
+                  <Input mono value={lng} onChange={e => setLng(e.target.value)} placeholder="e.g. -106.65014" style={{ padding: '10px 12px', fontSize: 14 }} />
+                </div>
+              </>
+            )}
+            {(lat || lng) && (
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)', padding: '6px 10px', background: 'var(--bg)', borderRadius: 6 }}>
+                {lat || '?'}, {lng || '?'}
+              </div>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={saving || !lat || !lng}
+              style={{ background: saving || !lat || !lng ? 'var(--blue-mid)' : 'var(--blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, cursor: saving || !lat || !lng ? 'default' : 'pointer' }}
+            >
+              {saving ? 'Saving…' : 'Save Location'}
+            </button>
+          </>
+        )}
+        <div style={{ height: 16 }} />
+      </div>
+    </div>
+  )
+}
+
+// ── Parent code share modal ───────────────────────────────────
+function ParentCodeModal({ student, school, onClose }) {
+  const url = `${window.location.origin}/?school=${encodeURIComponent(school.code)}&student=${encodeURIComponent(student.parent_code)}`
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: 24, width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>Parent Pickup Code</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
+        </div>
+        <div style={{ fontSize: 14, color: 'var(--text-2)' }}>
+          Share this with <strong>{student.name}</strong>'s parent so they can log in to the pickup notification system.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+          <QRCodeSVG value={url} size={180} />
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 800, letterSpacing: '0.12em', color: 'var(--blue)' }}>{student.parent_code}</div>
+        </div>
+        <button
+          onClick={handleCopy}
+          style={{ background: copied ? 'var(--green)' : 'var(--blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }}
+        >
+          {copied ? '✓ Copied!' : 'Copy Link'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Edit class screen ─────────────────────────────────────────
-function EditClassScreen({ cls, onBack, isAdmin }) {
+function EditClassScreen({ cls, school, onBack, isAdmin }) {
   const { classes, studentsInClass, editClass, deleteClass, editStudent, deleteStudent } = useCarLine()
   const { showToast } = useToast()
   const [code, setCode]       = useState(cls.code)
@@ -123,6 +289,7 @@ function EditClassScreen({ cls, onBack, isAdmin }) {
   const [confirmDelete, setConfirmDelete]           = useState(false)
   const [editingStudent, setEditingStudent]         = useState(null)
   const [confirmDeleteStudent, setConfirmDeleteStu] = useState(null)
+  const [shareStudent, setShareStudent]             = useState(null)
   const [, refresh] = useState(0)
   const myStudents = studentsInClass(cls.id)
 
@@ -141,6 +308,7 @@ function EditClassScreen({ cls, onBack, isAdmin }) {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {shareStudent && <ParentCodeModal student={shareStudent} school={school} onClose={() => setShareStudent(null)} />}
       {/* Header */}
       <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
@@ -183,7 +351,17 @@ function EditClassScreen({ cls, onBack, isAdmin }) {
                 </>
               ) : (
                 <>
-                  <span style={{ flex: 1, fontSize: 15, color: 'var(--text)' }}>{s.name}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, color: 'var(--text)' }}>{s.name}</div>
+                    {s.parent_code && (
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 2, letterSpacing: '0.06em' }}>{s.parent_code}</div>
+                    )}
+                  </div>
+                  {s.parent_code && (
+                    <button onClick={() => setShareStudent(s)} title="Share parent login link" style={{ background: 'var(--blue-light)', border: 'none', borderRadius: 6, padding: '5px 8px', fontSize: 14, cursor: 'pointer', color: 'var(--blue)' }}>
+                      ⬆
+                    </button>
+                  )}
                   <button onClick={() => setEditingStudent({ id: s.id, name: s.name })} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--text-2)', fontFamily: 'var(--font-body)' }}>Edit</button>
                   {confirmDeleteStudent === s.id ? (
                     <div style={{ display: 'flex', gap: 4 }}>
@@ -646,7 +824,7 @@ function AnalyticsScreen({ onBack }) {
 }
 
 // ── AdminView root ────────────────────────────────────────────
-export function AdminView({ school, loginRole, viewRole, onLogout }) {
+export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout }) {
   const { classes, students, resetClassroomData, deleteSchool } = useCarLine()
   const { showToast } = useToast()
   const isAdmin = loginRole === 'admin'
@@ -655,11 +833,14 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
   const [selectedClass, setSelectedClass] = useState(null)
   const [confirmReset, setConfirmReset]   = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Local copy so school location updates reflect immediately without re-login
+  const [school, setSchool] = useState(schoolProp)
 
   if (view === 'addClass') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
-  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
+  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} school={school} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
   if (view === 'changePin') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><ChangePinScreen school={school} onBack={() => setView('menu')} /></AppShell>
   if (view === 'analytics') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AnalyticsScreen onBack={() => setView('menu')} /></AppShell>
+  if (view === 'schoolLocation') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><SchoolLocationScreen school={school} onBack={() => setView('menu')} onSaved={(loc) => { setSchool(s => ({ ...s, ...loc })); setView('menu') }} /></AppShell>
 
   if (view === 'editClass') {
     return (
@@ -697,6 +878,7 @@ export function AdminView({ school, loginRole, viewRole, onLogout }) {
     { icon: '✏️', label: 'Edit Classes',     desc: 'Update class info, students, or delete a class',    action: () => setView('editClass') },
     ...(isAdmin ? [
       { icon: '📊', label: 'Daily Analytics', desc: "Today's pickups, absences, wait times, and trends", action: () => setView('analytics') },
+      { icon: '📍', label: 'School Location', desc: 'Set GPS location for parent proximity alerts',      action: () => setView('schoolLocation') },
       { icon: '🔑', label: 'Change PINs',     desc: 'Update admin or staff access PINs',                action: () => setView('changePin') },
     ] : []),
   ]
