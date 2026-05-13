@@ -97,17 +97,17 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
         <RoleCard
           icon="⚙️"
           title="School Setup"
-          desc={isAdmin ? 'Add classes, teachers & students' : 'Add classes and manage students'}
+          desc={isAdmin ? 'Manage school settings and data' : 'Add classes and manage students'}
           onClick={() => onSelect('admin')}
           dashed
-          badge={isAdmin ? (
-            <span style={{
-              fontSize: 11, fontWeight: 700, color: 'var(--purple)',
-              background: 'var(--purple-light)', padding: '3px 8px', borderRadius: 20,
-            }}>
-              Admin Only
-            </span>
-          ) : undefined}
+        // badge={isAdmin ? (
+        //   <span style={{
+        //     fontSize: 11, fontWeight: 700, color: 'var(--purple)',
+        //     background: 'var(--purple-light)', padding: '3px 8px', borderRadius: 20,
+        //   }}>
+        //     Admin Only
+        //   </span>
+        // ) : undefined}
         />
       </div>
     </div>
