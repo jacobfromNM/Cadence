@@ -552,6 +552,18 @@ export function CarLineProvider({ children }) {
 
   // ── Danger zone ────────────────────────────────────────────────────────
 
+  const resetPickups = useCallback(async () => {
+    if (!schoolId) return
+    const today = new Date().toISOString().slice(0, 10)
+    const { error } = await supabase
+      .from('pickup_requests')
+      .delete()
+      .eq('school_id', schoolId)
+      .gte('requested_at', today + 'T00:00:00.000Z')
+    if (error) throw error
+    setPickups({})
+  }, [schoolId])
+
   const resetClassroomData = useCallback(async () => {
     if (!schoolId) return
     await Promise.all([
@@ -620,7 +632,7 @@ export function CarLineProvider({ children }) {
       markAbsent, markPresent, isAbsent,
       addClass, editClass, deleteClass,
       addStudent, editStudent, deleteStudent,
-      resetClassroomData, deleteSchool, updatePins,
+      resetPickups, resetClassroomData, deleteSchool, updatePins,
       getClass, studentsInClass, pickupsForClass, activePickups,
       formatTime, avgWaitMinutes,
     }}>

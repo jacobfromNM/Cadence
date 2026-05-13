@@ -825,14 +825,15 @@ function AnalyticsScreen({ onBack }) {
 
 // ── AdminView root ────────────────────────────────────────────
 export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout }) {
-  const { classes, students, resetClassroomData, deleteSchool } = useCarLine()
+  const { classes, students, resetPickups, resetClassroomData, deleteSchool } = useCarLine()
   const { showToast } = useToast()
   const isAdmin = loginRole === 'admin'
   const [tab]               = useState('setup')
   const [view, setView]     = useState('menu')
   const [selectedClass, setSelectedClass] = useState(null)
-  const [confirmReset, setConfirmReset]   = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmPickupReset, setConfirmPickupReset] = useState(false)
+  const [confirmReset, setConfirmReset]             = useState(false)
+  const [confirmDelete, setConfirmDelete]           = useState(false)
   // Local copy so school location updates reflect immediately without re-login
   const [school, setSchool] = useState(schoolProp)
 
@@ -915,6 +916,33 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout })
         {isAdmin && (
           <div style={{ marginTop: 24 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Danger Zone</div>
+
+            {confirmPickupReset ? (
+              <ConfirmBlock
+                title="Reset all pickup statuses?"
+                message="Clears every pickup request from today. Students, classes, and absences are unaffected. Use this if the queue gets into a bad state."
+                confirmLabel="Yes, Reset Pickups"
+                danger={false}
+                onCancel={() => setConfirmPickupReset(false)}
+                onConfirm={async () => {
+                  try {
+                    await resetPickups()
+                    showToast({ type: 'info', title: 'Pickup statuses reset' })
+                  } catch {
+                    showToast({ type: 'error', title: 'Could not reset pickups', sub: 'Check your connection and try again.' })
+                  }
+                  setConfirmPickupReset(false)
+                }}
+              />
+            ) : (
+              <button onClick={() => setConfirmPickupReset(true)} style={{ width: '100%', background: 'var(--surface)', border: '1.5px solid oklch(0.82 0.10 60)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'oklch(0.50 0.14 50)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <span style={{ fontSize: 18 }}>🔃</span>
+                <div>
+                  <div>Reset All Pickup Statuses</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Clears today's pickup queue — students and classes unaffected</div>
+                </div>
+              </button>
+            )}
 
             {confirmReset ? (
               <ConfirmBlock
