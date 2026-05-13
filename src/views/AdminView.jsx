@@ -315,7 +315,7 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="15 18 9 12 15 6" /></svg>
         </button>
         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>
-          {cls.code} — {cls.teacher_name}
+          {cls.code} - {cls.teacher_name}
         </div>
       </div>
 
@@ -359,7 +359,7 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
                   </div>
                   {s.parent_code && (
                     <button onClick={() => setShareStudent(s)} style={{ background: 'var(--blue-light)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--blue)', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap' }}>
-                      Share Link
+                      Parent Link
                     </button>
                   )}
                   <button onClick={() => setEditingStudent({ id: s.id, name: s.name })} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--text-2)', fontFamily: 'var(--font-body)' }}>Edit</button>
