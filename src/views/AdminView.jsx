@@ -15,11 +15,11 @@ import { supabase } from '../lib/supabase'
 // ── Student add form (one-by-one or paste a list) ─────────────
 function StudentAddForm({ classId, classes, onAdded }) {
   const { addStudent } = useCadence()
-  const { showToast }  = useToast()
-  const [name, setName]         = useState('')
+  const { showToast } = useToast()
+  const [name, setName] = useState('')
   const [bulkText, setBulkText] = useState('')
   const [bulkMode, setBulkMode] = useState(false)
-  const [added, setAdded]       = useState(0)
+  const [added, setAdded] = useState(0)
 
   const handleOne = async () => {
     if (!name.trim()) return
@@ -117,11 +117,11 @@ function StudentAddForm({ classId, classes, onAdded }) {
 // ── School location screen ────────────────────────────────────
 function SchoolLocationScreen({ school, onBack, onSaved }) {
   const { showToast } = useToast()
-  const [lat, setLat]         = useState(school.latitude  ? String(school.latitude)  : '')
-  const [lng, setLng]         = useState(school.longitude ? String(school.longitude) : '')
+  const [lat, setLat] = useState(school.latitude ? String(school.latitude) : '')
+  const [lng, setLng] = useState(school.longitude ? String(school.longitude) : '')
   const [detecting, setDetecting] = useState(false)
   const [showManual, setShowManual] = useState(false)
-  const [saving, setSaving]   = useState(false)
+  const [saving, setSaving] = useState(false)
   const hasSaved = school.latitude && school.longitude
 
   const detect = () => {
@@ -148,7 +148,7 @@ function SchoolLocationScreen({ school, onBack, onSaved }) {
   }
 
   const handleSave = async () => {
-    const latitude  = parseFloat(lat)
+    const latitude = parseFloat(lat)
     const longitude = parseFloat(lng)
     if (isNaN(latitude) || isNaN(longitude)) {
       showToast({ type: 'error', title: 'Invalid coordinates' })
@@ -180,7 +180,7 @@ function SchoolLocationScreen({ school, onBack, onSaved }) {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="15 18 9 12 15 6" /></svg>
         </button>
         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>School Location</div>
       </div>
@@ -283,13 +283,13 @@ function ParentCodeModal({ student, school, onClose }) {
 function EditClassScreen({ cls, school, onBack, isAdmin }) {
   const { classes, studentsInClass, editClass, deleteClass, editStudent, deleteStudent } = useCadence()
   const { showToast } = useToast()
-  const [code, setCode]       = useState(cls.code)
+  const [code, setCode] = useState(cls.code)
   const [teacher, setTeacher] = useState(cls.teacher_name)
-  const [saved, setSaved]     = useState(false)
-  const [confirmDelete, setConfirmDelete]           = useState(false)
-  const [editingStudent, setEditingStudent]         = useState(null)
+  const [saved, setSaved] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [editingStudent, setEditingStudent] = useState(null)
   const [confirmDeleteStudent, setConfirmDeleteStu] = useState(null)
-  const [shareStudent, setShareStudent]             = useState(null)
+  const [shareStudent, setShareStudent] = useState(null)
   const [, refresh] = useState(0)
   const myStudents = studentsInClass(cls.id)
 
@@ -312,7 +312,7 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
       {/* Header */}
       <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="15 18 9 12 15 6" /></svg>
         </button>
         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>
           {cls.code} — {cls.teacher_name}
@@ -417,11 +417,11 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
 function AddClassWizard({ onBack, onDone }) {
   const { classes, addClass, studentsInClass } = useCadence()
   const { showToast } = useToast()
-  const [step, setStep]           = useState(0)
+  const [step, setStep] = useState(0)
   const [classCode, setClassCode] = useState('')
   const [teacherName, setTeacherName] = useState('')
-  const [newClassId, setNewClassId]   = useState(null)
-  const [creating, setCreating]       = useState(false)
+  const [newClassId, setNewClassId] = useState(null)
+  const [creating, setCreating] = useState(false)
 
   const handleCreate = async () => {
     if (!classCode || !teacherName || creating) return
@@ -446,7 +446,7 @@ function AddClassWizard({ onBack, onDone }) {
       <div style={{ padding: '14px 16px 12px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="15 18 9 12 15 6" /></svg>
           </button>
           <div style={{ flex: 1, fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Add a Class</div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{progress}</div>
@@ -524,27 +524,27 @@ function AddClassWizard({ onBack, onDone }) {
 // ── Change PINs screen ────────────────────────────────────────
 function ChangePinScreen({ school, onBack }) {
   const { updatePins } = useCadence()
-  const { showToast }  = useToast()
+  const { showToast } = useToast()
 
   // PINs are stored as bcrypt hashes — we can't recover plaintext, so we track
   // newly-set PINs in plaintext within this session for cross-PIN validation only.
   const [latestAdminPin, setLatestAdminPin] = useState('')
   const [latestStaffPin, setLatestStaffPin] = useState('')
 
-  const [adminNew,     setAdminNew]     = useState('')
+  const [adminNew, setAdminNew] = useState('')
   const [adminConfirm, setAdminConfirm] = useState('')
-  const [adminError,   setAdminError]   = useState('')
-  const [adminSaving,  setAdminSaving]  = useState(false)
+  const [adminError, setAdminError] = useState('')
+  const [adminSaving, setAdminSaving] = useState(false)
 
-  const [staffNew,     setStaffNew]     = useState('')
+  const [staffNew, setStaffNew] = useState('')
   const [staffConfirm, setStaffConfirm] = useState('')
-  const [staffError,   setStaffError]   = useState('')
-  const [staffSaving,  setStaffSaving]  = useState(false)
+  const [staffError, setStaffError] = useState('')
+  const [staffSaving, setStaffSaving] = useState(false)
 
   const validatePin = (pin, confirm, otherPin, label) => {
-    if (!/^\d{4,6}$/.test(pin))        return `${label} must be 4–6 digits`
-    if (pin !== confirm)               return 'PINs do not match'
-    if (pin === otherPin)              return 'Admin and staff PINs must be different'
+    if (!/^\d{4,6}$/.test(pin)) return `${label} must be 4–6 digits`
+    if (pin !== confirm) return 'PINs do not match'
+    if (pin === otherPin) return 'Admin and staff PINs must be different'
     return null
   }
 
@@ -610,7 +610,7 @@ function ChangePinScreen({ school, onBack }) {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="15 18 9 12 15 6" /></svg>
         </button>
         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Change PINs</div>
       </div>
@@ -664,7 +664,7 @@ function ChangePinScreen({ school, onBack }) {
 // ── Daily Analytics screen ────────────────────────────────────
 function AnalyticsScreen({ onBack }) {
   const { schoolId, absent, classes } = useCadence()
-  const [loading, setLoading]       = useState(true)
+  const [loading, setLoading] = useState(true)
   const [pickupRows, setPickupRows] = useState([])
   const [lastFetched, setLastFetched] = useState(null)
   const [fetchError, setFetchError] = useState(null)
@@ -695,7 +695,7 @@ function AnalyticsScreen({ onBack }) {
   useEffect(() => { fetchData() }, [])
 
   const completed = pickupRows.filter(p => p.status === 'complete')
-  const active    = pickupRows.filter(p => p.status !== 'complete')
+  const active = pickupRows.filter(p => p.status !== 'complete')
 
   const waits = completed
     .filter(p => p.requested_at && p.completed_at)
@@ -709,7 +709,7 @@ function AnalyticsScreen({ onBack }) {
     if (p.class_id) classCounts[p.class_id] = (classCounts[p.class_id] || 0) + 1
   }
   const topClassEntry = Object.entries(classCounts).sort((a, b) => b[1] - a[1])[0]
-  const busiestClass  = topClassEntry ? classes.find(c => c.id === topClassEntry[0]) : null
+  const busiestClass = topClassEntry ? classes.find(c => c.id === topClassEntry[0]) : null
 
   const hourCounts = {}
   for (const p of pickupRows) {
@@ -717,7 +717,7 @@ function AnalyticsScreen({ onBack }) {
     hourCounts[h] = (hourCounts[h] || 0) + 1
   }
   const peakEntry = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]
-  const peakHour  = peakEntry ? parseInt(peakEntry[0]) : null
+  const peakHour = peakEntry ? parseInt(peakEntry[0]) : null
 
   const formatHour = (h) => {
     if (h === null) return '—'
@@ -769,10 +769,10 @@ function AnalyticsScreen({ onBack }) {
             {/* Main stat grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[
-                { label: 'Total Pickups',   value: pickupRows.length,                           color: 'var(--blue)',   bg: 'var(--blue-light)' },
-                { label: 'Students Absent', value: absent.size,                                 color: 'var(--red)',    bg: 'oklch(0.97 0.04 25)' },
-                { label: 'Completed',       value: completed.length,                            color: 'var(--green)',  bg: 'var(--green-light)' },
-                { label: 'Avg Wait Time',   value: avgWait !== null ? `${avgWait}m` : '—',      color: 'var(--text-2)', bg: 'var(--surface)' },
+                { label: 'Total Pickups', value: pickupRows.length, color: 'var(--blue)', bg: 'var(--blue-light)' },
+                { label: 'Students Absent', value: absent.size, color: 'var(--red)', bg: 'oklch(0.97 0.04 25)' },
+                { label: 'Completed', value: completed.length, color: 'var(--green)', bg: 'var(--green-light)' },
+                { label: 'Avg Wait Time', value: avgWait !== null ? `${avgWait}m` : '—', color: 'var(--text-2)', bg: 'var(--surface)' },
               ].map(s => (
                 <div key={s.label} style={{ background: s.bg, borderRadius: 'var(--radius)', padding: '14px 16px', border: '1.5px solid var(--border)' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: s.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
@@ -824,32 +824,32 @@ function AnalyticsScreen({ onBack }) {
 }
 
 // ── AdminView root ────────────────────────────────────────────
-export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout }) {
+export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, onSchoolDelete }) {
   const { classes, students, resetPickups, resetClassroomData, deleteSchool } = useCadence()
   const { showToast } = useToast()
   const isAdmin = loginRole === 'admin'
-  const [tab]               = useState('setup')
-  const [view, setView]     = useState('menu')
+  const [tab] = useState('setup')
+  const [view, setView] = useState('menu')
   const [selectedClass, setSelectedClass] = useState(null)
   const [confirmPickupReset, setConfirmPickupReset] = useState(false)
-  const [confirmReset, setConfirmReset]             = useState(false)
-  const [confirmDelete, setConfirmDelete]           = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   // Local copy so school location updates reflect immediately without re-login
   const [school, setSchool] = useState(schoolProp)
 
-  if (view === 'addClass') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
-  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><EditClassScreen cls={selectedClass} school={school} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
-  if (view === 'changePin') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><ChangePinScreen school={school} onBack={() => setView('menu')} /></AppShell>
-  if (view === 'analytics') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><AnalyticsScreen onBack={() => setView('menu')} /></AppShell>
-  if (view === 'schoolLocation') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}><SchoolLocationScreen school={school} onBack={() => setView('menu')} onSaved={(loc) => { setSchool(s => ({ ...s, ...loc })); setView('menu') }} /></AppShell>
+  if (view === 'addClass') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
+  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><EditClassScreen cls={selectedClass} school={school} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
+  if (view === 'changePin') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><ChangePinScreen school={school} onBack={() => setView('menu')} /></AppShell>
+  if (view === 'analytics') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><AnalyticsScreen onBack={() => setView('menu')} /></AppShell>
+  if (view === 'schoolLocation') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><SchoolLocationScreen school={school} onBack={() => setView('menu')} onSaved={(loc) => { setSchool(s => ({ ...s, ...loc })); setView('menu') }} /></AppShell>
 
   if (view === 'editClass') {
     return (
-      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}>
+      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="15 18 9 12 15 6" /></svg>
             </button>
             <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Edit Classes</div>
           </div>
@@ -864,7 +864,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout })
                   <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{cls.teacher_name}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>{students.filter(s => s.class_id === cls.id).length} students</div>
                 </div>
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18}}><polyline points="9 18 15 12 9 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}><polyline points="9 18 15 12 9 6" /></svg>
               </div>
             ))}
           </div>
@@ -875,17 +875,17 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout })
 
   // Main menu
   const menuItems = [
-    { icon: '➕', label: 'Add a Class',      desc: 'Create a new class with teacher and students',      action: () => setView('addClass') },
-    { icon: '✏️', label: 'Edit Classes',     desc: 'Update class info, students, or delete a class',    action: () => setView('editClass') },
+    { icon: '➕', label: 'Add a Class', desc: 'Create a new class with teacher and students', action: () => setView('addClass') },
+    { icon: '✏️', label: 'Edit Classes', desc: 'Update class info, students, or delete a class', action: () => setView('editClass') },
     ...(isAdmin ? [
       { icon: '📊', label: 'Daily Analytics', desc: "Today's pickups, absences, wait times, and trends", action: () => setView('analytics') },
-      { icon: '📍', label: 'School Location', desc: 'Set GPS location for parent proximity alerts',      action: () => setView('schoolLocation') },
-      { icon: '🔑', label: 'Change PINs',     desc: 'Update admin or staff access PINs',                action: () => setView('changePin') },
+      { icon: '📍', label: 'School Location', desc: 'Set GPS location for parent proximity alerts', action: () => setView('schoolLocation') },
+      { icon: '🔑', label: 'Change PINs', desc: 'Update admin or staff access PINs', action: () => setView('changePin') },
     ] : []),
   ]
 
   return (
-    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => {}} onLogout={onLogout}>
+    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
@@ -908,7 +908,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout })
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{item.label}</div>
               <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>{item.desc}</div>
             </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18}}><polyline points="9 18 15 12 9 6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}><polyline points="9 18 15 12 9 6" /></svg>
           </div>
         ))}
 
@@ -939,7 +939,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout })
                 <span style={{ fontSize: 18 }}>🔃</span>
                 <div>
                   <div>Reset All Pickup Statuses</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Clears today's pickup queue — students and classes unaffected</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400, marginTop: 1 }}>Clears today's pickup queue and statuses.</div>
                 </div>
               </button>
             )}
@@ -968,10 +968,10 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout })
                 <ConfirmBlock
                   title={`Delete ${school.name}?`}
                   message="This permanently deletes all classes, students, and history. Cannot be undone."
-                  confirmLabel="Delete Forever"
+                  confirmLabel="Delete Forever and Log Out"
                   danger
                   onCancel={() => setConfirmDelete(false)}
-                  onConfirm={() => { deleteSchool(); setConfirmDelete(false); onLogout(); showToast({ type: 'error', title: 'School data deleted' }) }}
+                  onConfirm={() => { deleteSchool(); setConfirmDelete(false); (onSchoolDelete || onLogout)(); showToast({ type: 'error', title: 'School data deleted' }) }}
                 />
               </div>
             ) : (

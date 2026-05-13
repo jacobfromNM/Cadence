@@ -215,6 +215,7 @@ function InnerApp() {
           loginRole={loginRole}
           viewRole={viewRole}
           onLogout={handleBackToRole}
+          onSchoolDelete={handleLogout}
         />
       )}
     </>
