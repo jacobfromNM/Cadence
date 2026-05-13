@@ -1,4 +1,4 @@
-# CarLine 🚗
+# Cadence 🚗
 
 **School pickup, simplified.** A real-time web app that replaces walkie-talkies at school pickup with a clean, fast, multi-device interface.
 
@@ -70,7 +70,7 @@ VITE_USE_MOCK_DATA=false
 ```
 
 ### 5. Swap mock data for real Supabase calls
-Each action in `src/context/CarLineContext.jsx` has a commented-out `── SUPABASE VERSION ──` block showing the exact replacement. Uncomment those and remove the `setState` lines beneath them.
+Each action in `src/context/CadenceContext.jsx` has a commented-out `── SUPABASE VERSION ──` block showing the exact replacement. Uncomment those and remove the `setState` lines beneath them.
 
 ---
 
@@ -80,9 +80,9 @@ Each action in `src/context/CarLineContext.jsx` has a commented-out `── SUPA
 ```bash
 git init
 git add .
-git commit -m "Initial CarLine commit"
+git commit -m "Initial Cadence commit"
 # Create a new repo on github.com, then:
-git remote add origin https://github.com/YOUR_USERNAME/carline.git
+git remote add origin https://github.com/YOUR_USERNAME/cadence.git
 git push -u origin main
 ```
 
@@ -92,7 +92,7 @@ git push -u origin main
 3. Add environment variables (your Supabase URL + key)
 4. Deploy
 
-Every push to `main` auto-deploys. Your app will be live at `carline.vercel.app`.
+Every push to `main` auto-deploys. Your app will be live at `cadence.vercel.app`.
 
 ### 3. Optional: custom domain
 In Vercel → Settings → Domains → add `pickup.yourschool.org` (or any domain you own).
@@ -102,12 +102,12 @@ In Vercel → Settings → Domains → add `pickup.yourschool.org` (or any domai
 ## Project structure
 
 ```
-carline/
+cadence/
 ├── public/
 │   └── manifest.json          # PWA manifest (installable on home screen)
 ├── src/
 │   ├── context/
-│   │   ├── CarLineContext.jsx  # All app state + data actions
+│   │   ├── CadenceContext.jsx  # All app state + data actions
 │   │   └── ToastContext.jsx    # Global toast notifications
 │   ├── components/
 │   │   ├── AppShell.jsx        # Responsive layout (sidebar tablet+, bottom nav mobile)
@@ -147,8 +147,8 @@ carline/
 
 ## PWA — installing on phones
 
-Teachers and staff can add CarLine to their home screen without an app store:
+Teachers and staff can add Cadence to their home screen without an app store:
 - **iPhone (Safari):** tap the Share button → "Add to Home Screen"
 - **Android (Chrome):** tap the three-dot menu → "Add to Home screen" (or Chrome may prompt automatically)
 
-Once installed, CarLine launches full-screen like a native app and goes straight to the login screen.
+Once installed, Cadence launches full-screen like a native app and goes straight to the login screen.

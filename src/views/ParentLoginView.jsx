@@ -162,9 +162,9 @@ export function ParentLoginView({ onLogin, onBack }) {
           {/* Logo — identical to staff/admin login */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
             <div style={{ width: 72, height: 72, borderRadius: 20, marginBottom: 16, overflow: 'hidden' }}>
-              <img src="/icon-192.png" alt="CarLine" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <img src="/icon-192.png" alt="Cadence" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)' }}>CarLine</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)' }}>Cadence</div>
             <div style={{ fontSize: 15, color: 'var(--text-2)', marginTop: 4 }}>School pickup, simplified.</div>
             <div style={{ marginTop: 10, background: 'var(--blue-light)', color: 'var(--blue)', fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: '0.04em' }}>
               Parent Login Portal

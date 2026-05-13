@@ -1,5 +1,5 @@
 -- =============================================================
--- CarLine — Supabase Schema
+-- Cadence — Supabase Schema
 -- =============================================================
 -- Run this entire file in your Supabase project's SQL Editor.
 -- Dashboard → SQL Editor → New query → paste → Run

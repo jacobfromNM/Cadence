@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase'
 import { haversineMeters } from '../lib/haversine'
 
 const NEARBY_METERS = 400
-const STORAGE_KEY   = 'carline_parent_students'
+const STORAGE_KEY   = 'cadence_parent_students'
 
 function loadStoredIds() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
@@ -204,9 +204,9 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
       <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-            <img src="/icon-192.png" alt="CarLine" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src="/icon-192.png" alt="Cadence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>CarLine</span>
+          <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Cadence</span>
           <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 2 }}>Parent</span>
         </div>
         <button

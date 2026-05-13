@@ -4,7 +4,7 @@
 // One card per active alert — staff can start a pickup or dismiss.
 
 import React, { useState, useEffect } from 'react'
-import { useCarLine } from '../context/CarLineContext'
+import { useCadence } from '../context/CadenceContext'
 import { useToast } from '../context/ToastContext'
 
 function useNow() {
@@ -23,7 +23,7 @@ function elapsedLabel(createdAt, now) {
 }
 
 export function ParentNearbyAlert() {
-  const { parentNearby, students, pickups, dismissParentNearby, convertParentNearby } = useCarLine()
+  const { parentNearby, students, pickups, dismissParentNearby, convertParentNearby } = useCadence()
   const { showToast } = useToast()
   const now = useNow()
 

@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { useCarLine } from '../context/CarLineContext'
+import { useCadence } from '../context/CadenceContext'
 import { useToast } from '../context/ToastContext'
 import { Input, ConfirmBlock, SectionLabel } from '../components/ui'
 import { AppShell } from '../components/AppShell'
@@ -14,7 +14,7 @@ import { supabase } from '../lib/supabase'
 
 // ── Student add form (one-by-one or paste a list) ─────────────
 function StudentAddForm({ classId, classes, onAdded }) {
-  const { addStudent } = useCarLine()
+  const { addStudent } = useCadence()
   const { showToast }  = useToast()
   const [name, setName]         = useState('')
   const [bulkText, setBulkText] = useState('')
@@ -281,7 +281,7 @@ function ParentCodeModal({ student, school, onClose }) {
 
 // ── Edit class screen ─────────────────────────────────────────
 function EditClassScreen({ cls, school, onBack, isAdmin }) {
-  const { classes, studentsInClass, editClass, deleteClass, editStudent, deleteStudent } = useCarLine()
+  const { classes, studentsInClass, editClass, deleteClass, editStudent, deleteStudent } = useCadence()
   const { showToast } = useToast()
   const [code, setCode]       = useState(cls.code)
   const [teacher, setTeacher] = useState(cls.teacher_name)
@@ -415,7 +415,7 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
 
 // ── Add class wizard ──────────────────────────────────────────
 function AddClassWizard({ onBack, onDone }) {
-  const { classes, addClass, studentsInClass } = useCarLine()
+  const { classes, addClass, studentsInClass } = useCadence()
   const { showToast } = useToast()
   const [step, setStep]           = useState(0)
   const [classCode, setClassCode] = useState('')
@@ -523,7 +523,7 @@ function AddClassWizard({ onBack, onDone }) {
 
 // ── Change PINs screen ────────────────────────────────────────
 function ChangePinScreen({ school, onBack }) {
-  const { updatePins } = useCarLine()
+  const { updatePins } = useCadence()
   const { showToast }  = useToast()
 
   // PINs are stored as bcrypt hashes — we can't recover plaintext, so we track
@@ -663,7 +663,7 @@ function ChangePinScreen({ school, onBack }) {
 
 // ── Daily Analytics screen ────────────────────────────────────
 function AnalyticsScreen({ onBack }) {
-  const { schoolId, absent, classes } = useCarLine()
+  const { schoolId, absent, classes } = useCadence()
   const [loading, setLoading]       = useState(true)
   const [pickupRows, setPickupRows] = useState([])
   const [lastFetched, setLastFetched] = useState(null)
@@ -825,7 +825,7 @@ function AnalyticsScreen({ onBack }) {
 
 // ── AdminView root ────────────────────────────────────────────
 export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout }) {
-  const { classes, students, resetPickups, resetClassroomData, deleteSchool } = useCarLine()
+  const { classes, students, resetPickups, resetClassroomData, deleteSchool } = useCadence()
   const { showToast } = useToast()
   const isAdmin = loginRole === 'admin'
   const [tab]               = useState('setup')

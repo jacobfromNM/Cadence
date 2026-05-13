@@ -219,11 +219,11 @@ export function LoginView({ onLogin, onCreateSchool, onParentLogin }) {
             }}>
               <img
                 src="/icon-192.png"
-                alt="CarLine"
+                alt="Cadence"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)' }}>CarLine</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)' }}>Cadence</div>
             <div style={{ fontSize: 15, color: 'var(--text-2)', marginTop: 4 }}>School pickup, simplified.</div>
           </div>
 
@@ -289,7 +289,7 @@ export function LoginView({ onLogin, onCreateSchool, onParentLogin }) {
 
           {/* New school link */}
           <div style={{ marginTop: 24, textAlign: 'center' }}>
-            <span style={{ fontSize: 13, color: 'var(--text-3)' }}>New to CarLine?&nbsp;</span>
+            <span style={{ fontSize: 13, color: 'var(--text-3)' }}>New to Cadence?&nbsp;</span>
             <button
               onClick={onCreateSchool}
               style={{

@@ -1,7 +1,7 @@
 // src/views/TeacherView.jsx
 
 import React, { useState, useEffect } from 'react'
-import { useCarLine } from '../context/CarLineContext'
+import { useCadence } from '../context/CadenceContext'
 import { useToast } from '../context/ToastContext'
 import { Avatar, StatusPill, EmptyState, SectionLabel } from '../components/ui'
 import { AppShell } from '../components/AppShell'
@@ -40,7 +40,7 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
   const {
     classes, students, pickups, absent,
     sendStudent, markAbsent, markPresent, formatTime,
-  } = useCarLine()
+  } = useCadence()
   const { showToast } = useToast()
   const [selectedClass, setSelectedClass] = useState(null)
   const [tab] = useState('queue')

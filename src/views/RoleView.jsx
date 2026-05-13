@@ -83,7 +83,7 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
         <RoleCard
           icon="🚗"
           title="Pickup Staff"
-          desc="I'm outside managing carline"
+          desc="I'm outside managing cadence"
           onClick={() => onSelect('staff')}
         />
         <RoleCard

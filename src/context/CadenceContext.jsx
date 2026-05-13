@@ -1,4 +1,4 @@
-// src/context/CarLineContext.jsx
+// src/context/CadenceContext.jsx
 //
 // Global state wired to Supabase.
 // - All data is fetched from the database on mount (when schoolId is set)
@@ -18,9 +18,9 @@ import React, {
 import bcrypt from 'bcryptjs'
 import { supabase } from '../lib/supabase'
 
-const CarLineCtx = createContext(null)
+const CadenceCtx = createContext(null)
 
-export function CarLineProvider({ children }) {
+export function CadenceProvider({ children }) {
   // schoolId is null until login — no data fetched until then
   const [schoolId,      setSchoolId]      = useState(null)
   const [classes,       setClasses]       = useState([])
@@ -93,7 +93,7 @@ export function CarLineProvider({ children }) {
       nearbyRes.data.forEach(r => { nearbyMap[r.student_id] = r })
       setParentNearby(nearbyMap)
     } catch (err) {
-      console.error('CarLine initSchool error:', err)
+      console.error('Cadence initSchool error:', err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -623,7 +623,7 @@ export function CarLineProvider({ children }) {
   }, [pickups])
 
   return (
-    <CarLineCtx.Provider value={{
+    <CadenceCtx.Provider value={{
       schoolId, loading, error,
       classes, students, pickups, absent, parentNearby,
       initSchool, clearSchool,
@@ -637,8 +637,8 @@ export function CarLineProvider({ children }) {
       formatTime, avgWaitMinutes,
     }}>
       {children}
-    </CarLineCtx.Provider>
+    </CadenceCtx.Provider>
   )
 }
 
-export const useCarLine = () => useContext(CarLineCtx)
+export const useCadence = () => useContext(CadenceCtx)

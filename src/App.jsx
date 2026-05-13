@@ -10,7 +10,7 @@
 
 import React, { useState } from 'react'
 import bcrypt from 'bcryptjs'
-import { CarLineProvider, useCarLine } from './context/CarLineContext'
+import { CadenceProvider, useCadence } from './context/CadenceContext'
 import { ToastProvider } from './context/ToastContext'
 import { ToastLayer } from './components/ui'
 import { LoginView } from './views/LoginView'
@@ -23,9 +23,9 @@ import { ParentLoginView } from './views/ParentLoginView'
 import { ParentView } from './views/ParentView'
 import { supabase } from './lib/supabase'
 
-// ── Inner app — needs access to CarLineProvider context ───────
+// ── Inner app — needs access to CadenceProvider context ───────
 function InnerApp() {
-  const { initSchool, clearSchool, loading } = useCarLine()
+  const { initSchool, clearSchool, loading } = useCadence()
 
   // If URL has ?school= and ?student= params, jump straight to parent login
   const urlParams   = new URLSearchParams(window.location.search)
@@ -224,10 +224,10 @@ function InnerApp() {
 // ── Root — wraps providers around InnerApp ────────────────────
 export default function App() {
   return (
-    <CarLineProvider>
+    <CadenceProvider>
       <ToastProvider>
         <InnerApp />
       </ToastProvider>
-    </CarLineProvider>
+    </CadenceProvider>
   )
 }

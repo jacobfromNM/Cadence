@@ -4,7 +4,7 @@
 // The Students tab is the primary workflow — search fires Parent Here inline.
 
 import React, { useState } from 'react'
-import { useCarLine } from '../context/CarLineContext'
+import { useCadence } from '../context/CadenceContext'
 import { useToast } from '../context/ToastContext'
 import { Avatar, StatusPill, EmptyState, SectionLabel, SearchBar } from '../components/ui'
 import { AppShell } from '../components/AppShell'
@@ -39,7 +39,7 @@ function ScreenHeader({ onBack, title, subtitle, right }) {
 
 // ── Students Tab ──────────────────────────────────────────────
 function StudentsTab({ onDrillClass }) {
-  const { classes, students, pickups, requestPickup, completePickup, isAbsent, formatTime } = useCarLine()
+  const { classes, students, pickups, requestPickup, completePickup, isAbsent, formatTime } = useCadence()
   const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const [gradeFilter, setGradeFilter] = useState('All')
@@ -218,7 +218,7 @@ function StudentsTab({ onDrillClass }) {
 
 // ── Active Pickups Tab ────────────────────────────────────────
 function ActiveTab() {
-  const { activePickups, completePickup, formatTime } = useCarLine()
+  const { activePickups, completePickup, formatTime } = useCadence()
   const { showToast } = useToast()
   const active = activePickups()
 
@@ -275,7 +275,7 @@ function ActiveTab() {
 
 // ── Classes Tab + Drill-down ──────────────────────────────────
 function ClassesTab({ onDrill }) {
-  const { classes, students, pickupsForClass } = useCarLine()
+  const { classes, students, pickupsForClass } = useCadence()
   return (
     <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
       <SectionLabel>{classes.length} classes</SectionLabel>
@@ -317,7 +317,7 @@ function ClassesTab({ onDrill }) {
 }
 
 function ClassDrillScreen({ cls, onBack }) {
-  const { studentsInClass, pickups, requestPickup, completePickup, isAbsent, formatTime } = useCarLine()
+  const { studentsInClass, pickups, requestPickup, completePickup, isAbsent, formatTime } = useCadence()
   const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const allStudents = studentsInClass(cls.id)

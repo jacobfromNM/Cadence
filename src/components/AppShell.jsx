@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { RoleBadge } from './ui'
-import { useCarLine } from '../context/CarLineContext'
+import { useCadence } from '../context/CadenceContext'
 
 // ── Nav icons ─────────────────────────────────────────────────
 function IconStudents() {
@@ -43,7 +43,7 @@ function useIsWide() {
 
 export function AppShell({ school, loginRole, viewRole, tab, onTabChange, onLogout, children }) {
   const isWide = useIsWide()
-  const { activePickups } = useCarLine()
+  const { activePickups } = useCadence()
   const activePending = activePickups().length
 
   // viewRole reflects the selected view ('staff' | 'teacher' | 'admin')
@@ -90,11 +90,11 @@ export function AppShell({ school, loginRole, viewRole, tab, onTabChange, onLogo
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <img
                 src="/favicon.png"
-                alt="CarLine"
+                alt="Cadence"
                 style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
               />
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>CarLine</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>Cadence</div>
                 <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
                   {school.code}
                 </div>
