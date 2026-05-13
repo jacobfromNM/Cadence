@@ -358,8 +358,8 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
                     )}
                   </div>
                   {s.parent_code && (
-                    <button onClick={() => setShareStudent(s)} title="Share parent login link" style={{ background: 'var(--blue-light)', border: 'none', borderRadius: 6, padding: '5px 8px', fontSize: 14, cursor: 'pointer', color: 'var(--blue)' }}>
-                      ⬆
+                    <button onClick={() => setShareStudent(s)} style={{ background: 'var(--blue-light)', border: 'none', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: 'var(--blue)', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap' }}>
+                      Share Link
                     </button>
                   )}
                   <button onClick={() => setEditingStudent({ id: s.id, name: s.name })} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--text-2)', fontFamily: 'var(--font-body)' }}>Edit</button>

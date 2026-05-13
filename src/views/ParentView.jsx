@@ -2,37 +2,63 @@
 //
 // Parent-facing screen. Requests geolocation and reports to staff when
 // the parent is within NEARBY_METERS of the school.
+// Tracks pickup status in real-time so parents see progress without refreshing.
 // Parents can also add additional student codes (siblings) from this screen.
 
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { haversineMeters } from '../lib/haversine'
 
-const NEARBY_METERS  = 400
-const STORAGE_KEY    = 'carline_parent_students'
+const NEARBY_METERS = 400
+const STORAGE_KEY   = 'carline_parent_students'
 
 function loadStoredIds() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
 }
-
 function saveIds(ids) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)) } catch {}
 }
 
+// Determine what banner to show based on location + pickup state.
+// pickups: { [studentId]: pickup_row }
+function resolveBanner(geoStatus, pickups, studentIds, locationErr) {
+  if (geoStatus === 'idle')     return { bg: 'var(--surface)',      border: 'var(--border)', icon: '📍', color: 'var(--text-2)', text: 'Allow location access to notify pickup staff when you arrive.', bold: false }
+  if (geoStatus === 'locating') return { bg: 'var(--blue-light)',   border: 'var(--blue)',   icon: '📡', color: 'var(--blue)',   text: "Watching your location — staff will be notified when you're nearby.", bold: false }
+  if (geoStatus === 'error')    return { bg: 'oklch(0.97 0.04 25)', border: 'var(--red)',    icon: '⚠️', color: 'var(--red)',   text: locationErr, bold: false }
+
+  // geoStatus === 'nearby' — show pickup-based message
+  const statuses = studentIds.map(id => pickups[id]?.status ?? null)
+  const allComplete  = statuses.length > 0 && statuses.every(s => s === 'complete')
+  const anyActive    = statuses.some(s => s === 'requested' || s === 'sent')
+
+  if (allComplete) return { bg: 'var(--green-light)', border: 'var(--green)', icon: '✅', color: 'var(--green)', text: 'Picked up! See you tomorrow.', bold: true }
+  if (anyActive)   return { bg: 'var(--yellow)',       border: 'oklch(0.78 0.16 85)', icon: '🏃', color: 'oklch(0.38 0.12 80)', text: 'Getting your student ready for pickup…', bold: true }
+  return               { bg: 'var(--green-light)', border: 'var(--green)', icon: '✅', color: 'var(--green)', text: 'Staff have been notified — pull up to the pickup zone.', bold: true }
+}
+
+function studentPickupLabel(pickup) {
+  if (!pickup) return null
+  if (pickup.status === 'complete')  return { text: 'Picked up!', color: 'var(--green)' }
+  if (pickup.status === 'sent')      return { text: 'On the way out…', color: 'oklch(0.45 0.12 80)' }
+  if (pickup.status === 'requested') return { text: 'Getting ready…', color: 'oklch(0.45 0.12 80)' }
+  return null
+}
+
 export function ParentView({ school, initialStudentIds, onLogout }) {
   const [studentIds, setStudentIds] = useState(() => {
-    // Merge initial ids with any previously stored (sibling) ids for this session
     const stored = loadStoredIds()
     const merged = [...new Set([...initialStudentIds, ...stored])]
     saveIds(merged)
     return merged
   })
-  const [students,    setStudents]    = useState([])
-  const [status,      setStatus]      = useState('idle')  // idle | locating | nearby | error
+  const [students,   setStudents]   = useState([])
+  const [pickups,    setPickups]    = useState({})  // { [studentId]: pickup_row }
+  const [geoStatus,  setGeoStatus]  = useState('idle')
   const [locationErr, setLocationErr] = useState('')
+
   // Sibling add form
-  const [siblingCode, setSiblingCode] = useState('')
-  const [siblingErr,  setSiblingErr]  = useState('')
+  const [siblingCode,    setSiblingCode]    = useState('')
+  const [siblingErr,     setSiblingErr]     = useState('')
   const [siblingLoading, setSiblingLoading] = useState(false)
   const [showSiblingForm, setShowSiblingForm] = useState(false)
 
@@ -41,61 +67,94 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
   // Fetch student details whenever studentIds changes
   useEffect(() => {
     if (!studentIds.length) return
-    supabase
-      .from('students')
-      .select('id, name, class_id')
-      .in('id', studentIds)
+    supabase.from('students').select('id, name, class_id').in('id', studentIds)
       .then(({ data }) => { if (data) setStudents(data) })
   }, [studentIds])
+
+  // Fetch today's pickups + subscribe to realtime changes
+  useEffect(() => {
+    if (!studentIds.length) return
+    const today = new Date().toISOString().slice(0, 10)
+
+    supabase.from('pickup_requests').select('*')
+      .in('student_id', studentIds)
+      .gte('requested_at', today + 'T00:00:00.000Z')
+      .then(({ data }) => {
+        if (data) {
+          const map = {}
+          data.forEach(p => { map[p.student_id] = p })
+          setPickups(map)
+        }
+      })
+
+    const channel = supabase
+      .channel(`parent_pickups:${school.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'pickup_requests',
+        filter: `school_id=eq.${school.id}`,
+      }, ({ new: row }) => {
+        if (studentIds.includes(row.student_id))
+          setPickups(prev => ({ ...prev, [row.student_id]: row }))
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'pickup_requests',
+        filter: `school_id=eq.${school.id}`,
+      }, ({ new: row }) => {
+        if (studentIds.includes(row.student_id))
+          setPickups(prev => ({ ...prev, [row.student_id]: row }))
+      })
+      .on('postgres_changes', {
+        event: 'DELETE', schema: 'public', table: 'pickup_requests',
+        filter: `school_id=eq.${school.id}`,
+      }, ({ old: row }) => {
+        if (studentIds.includes(row.student_id))
+          setPickups(prev => { const n = { ...prev }; delete n[row.student_id]; return n })
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [studentIds, school.id])
 
   // Geolocation watcher
   useEffect(() => {
     if (!school.latitude || !school.longitude) {
-      setStatus('error')
+      setGeoStatus('error')
       setLocationErr('School location is not configured yet. Ask your school admin to set it up.')
       return
     }
     if (!navigator.geolocation) {
-      setStatus('error')
+      setGeoStatus('error')
       setLocationErr('Your browser does not support location services.')
       return
     }
 
-    setStatus('locating')
+    setGeoStatus('locating')
 
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const dist = haversineMeters(
-          { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
+          { latitude: pos.coords.latitude,  longitude: pos.coords.longitude },
           { latitude: Number(school.latitude), longitude: Number(school.longitude) }
         )
         if (dist < NEARBY_METERS) {
-          // Notify for each student that hasn't been notified yet this session
           studentIds.forEach(id => {
-            if (!notifiedIds.current.has(id)) {
-              notifiedIds.current.add(id)
-              supabase
-                .from('parent_nearby')
-                .select('id')
-                .eq('school_id', school.id)
-                .eq('student_id', id)
-                .is('dismissed_at', null)
-                .is('converted_at', null)
-                .maybeSingle()
-                .then(({ data: existing }) => {
-                  if (!existing) {
-                    supabase.from('parent_nearby').insert({ school_id: school.id, student_id: id }).then()
-                  }
-                })
-            }
+            if (notifiedIds.current.has(id)) return
+            notifiedIds.current.add(id)
+            supabase.from('parent_nearby').select('id')
+              .eq('school_id', school.id).eq('student_id', id)
+              .is('dismissed_at', null).is('converted_at', null).maybeSingle()
+              .then(({ data: existing }) => {
+                if (!existing)
+                  supabase.from('parent_nearby').insert({ school_id: school.id, student_id: id }).then()
+              })
           })
-          setStatus('nearby')
-        } else if (status !== 'nearby') {
-          setStatus('locating')
+          setGeoStatus('nearby')
+        } else {
+          setGeoStatus(prev => prev === 'nearby' ? 'nearby' : 'locating')
         }
       },
       (err) => {
-        setStatus('error')
+        setGeoStatus('error')
         setLocationErr(
           err.code === 1
             ? 'Location access was denied. Enable location permissions in your browser settings.'
@@ -115,22 +174,10 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
     setSiblingErr('')
     setSiblingLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('students')
-        .select('id, name')
-        .eq('school_id', school.id)
-        .eq('parent_code', code)
-        .maybeSingle()
-
-      if (error || !data) {
-        setSiblingErr('Student code not found at this school.')
-        return
-      }
-      if (studentIds.includes(data.id)) {
-        setSiblingErr('That student is already linked.')
-        return
-      }
-
+      const { data } = await supabase.from('students').select('id, name')
+        .eq('school_id', school.id).eq('parent_code', code).maybeSingle()
+      if (!data) { setSiblingErr('Student code not found at this school.'); return }
+      if (studentIds.includes(data.id)) { setSiblingErr('That student is already linked.'); return }
       const updated = [...studentIds, data.id]
       setStudentIds(updated)
       saveIds(updated)
@@ -149,20 +196,16 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
     onLogout()
   }
 
-  const statusConfig = {
-    idle:     { bg: 'var(--surface)', border: 'var(--border)', icon: '📍', color: 'var(--text-2)', text: 'Allow location access to notify pickup staff when you arrive.' },
-    locating: { bg: 'var(--blue-light)', border: 'var(--blue)', icon: '📡', color: 'var(--blue)', text: 'Watching your location — staff will be notified when you\'re nearby.' },
-    nearby:   { bg: 'var(--green-light)', border: 'var(--green)', icon: '✅', color: 'var(--green)', text: 'Staff have been notified — pull up to the pickup zone.' },
-    error:    { bg: 'oklch(0.97 0.04 25)', border: 'var(--red)', icon: '⚠️', color: 'var(--red)', text: locationErr },
-  }
-  const s = statusConfig[status]
+  const banner = resolveBanner(geoStatus, pickups, studentIds, locationErr)
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       {/* Header */}
       <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 20 }}>🚗</span>
+          <div style={{ width: 28, height: 28, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+            <img src="/icon-192.png" alt="CarLine" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
           <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>CarLine</span>
           <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 2 }}>Parent</span>
         </div>
@@ -179,9 +222,9 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{school.name}</div>
 
         {/* Status banner */}
-        <div style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 'var(--radius)', padding: '16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <span style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</span>
-          <div style={{ fontSize: 14, color: s.color, lineHeight: 1.5, fontWeight: status === 'nearby' ? 700 : 400 }}>{s.text}</div>
+        <div style={{ background: banner.bg, border: `1.5px solid ${banner.border}`, borderRadius: 'var(--radius)', padding: '16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <span style={{ fontSize: 22, flexShrink: 0 }}>{banner.icon}</span>
+          <div style={{ fontSize: 14, color: banner.color, lineHeight: 1.5, fontWeight: banner.bold ? 700 : 400 }}>{banner.text}</div>
         </div>
 
         {/* Student cards */}
@@ -189,19 +232,22 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>
             {students.length === 1 ? 'Your Student' : 'Your Students'}
           </div>
-          {students.map(stu => (
-            <div key={stu.id} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blue-light)', color: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
-                {stu.name.charAt(0).toUpperCase()}
+          {students.map(stu => {
+            const label = geoStatus === 'nearby' ? studentPickupLabel(pickups[stu.id]) : null
+            return (
+              <div key={stu.id} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blue-light)', color: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
+                  {stu.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{stu.name}</div>
+                  {label && (
+                    <div style={{ fontSize: 12, color: label.color, fontWeight: 600, marginTop: 2 }}>{label.text}</div>
+                  )}
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{stu.name}</div>
-                {status === 'nearby' && (
-                  <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 600, marginTop: 2 }}>Staff notified</div>
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Add sibling */}
