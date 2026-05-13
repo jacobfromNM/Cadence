@@ -59,9 +59,9 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
                 {school.code}
               </span>
             </div>
-            <div style={{ marginTop: 10 }}>
+            {/* <div style={{ marginTop: 10 }}>
               <RoleBadge role={isAdmin ? 'admin' : 'staff'} />
-            </div>
+            </div> */}
             <div style={{ fontSize: 14, color: 'var(--text-2)', marginTop: 12 }}>
               What's your role today?
             </div>
