@@ -66,6 +66,7 @@ export function RoleBadge({ role }) {
   const cfg = ROLE_CONFIG[role] || ROLE_CONFIG.staff
   return (
     <span style={{
+      textAlign: 'center',
       display: 'inline-flex', alignItems: 'center', gap: 4,
       padding: '4px 10px', borderRadius: 20,
       fontSize: 11, fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase',
