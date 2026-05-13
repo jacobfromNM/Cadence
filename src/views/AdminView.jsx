@@ -971,7 +971,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, o
                   confirmLabel="Delete Forever and Log Out"
                   danger
                   onCancel={() => setConfirmDelete(false)}
-                  onConfirm={() => { deleteSchool(); setConfirmDelete(false); (onSchoolDelete || onLogout)(); showToast({ type: 'error', title: 'School data deleted' }) }}
+                  onConfirm={() => { deleteSchool(); setConfirmDelete(false); (onSchoolDelete || onLogout)(); showToast({ type: 'error', title: 'School Data Deleted Successfully' }) }}
                 />
               </div>
             ) : (

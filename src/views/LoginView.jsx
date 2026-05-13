@@ -32,7 +32,7 @@ function MarkdownContent({ md }) {
 
   const h1Style = { fontSize: 20, fontWeight: 800, color: 'var(--text)', margin: '0 0 4px' }
   const h2Style = { fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: '18px 0 6px' }
-  const pStyle  = { fontSize: 13, color: 'var(--text-2)', margin: '0 0 8px', lineHeight: 1.6 }
+  const pStyle = { fontSize: 13, color: 'var(--text-2)', margin: '0 0 8px', lineHeight: 1.6 }
   const hrStyle = { border: 'none', borderTop: '1px solid var(--border)', margin: '12px 0' }
   const liStyle = { fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }
   const ulStyle = { margin: '0 0 8px', paddingLeft: 20 }
@@ -125,18 +125,18 @@ function PrivacyModal({ onClose }) {
 
 // ---------------------------------------------------------------------------
 
-const MAX_ATTEMPTS  = 5
-const LOCKOUT_MS    = 30_000
+const MAX_ATTEMPTS = 5
+const LOCKOUT_MS = 30_000
 
 export function LoginView({ onLogin, onCreateSchool, onParentLogin }) {
-  const [code,         setCode]         = useState('')
-  const [pin,          setPin]          = useState('')
-  const [err,          setErr]          = useState('')
-  const [loading,      setLoading]      = useState(false)
-  const [privacyOpen,  setPrivacyOpen]  = useState(false)
-  const [attempts,     setAttempts]     = useState(0)
-  const [lockedUntil,  setLockedUntil]  = useState(null)
-  const [countdown,    setCountdown]    = useState(0)
+  const [code, setCode] = useState('')
+  const [pin, setPin] = useState('')
+  const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [privacyOpen, setPrivacyOpen] = useState(false)
+  const [attempts, setAttempts] = useState(0)
+  const [lockedUntil, setLockedUntil] = useState(null)
+  const [countdown, setCountdown] = useState(0)
 
   // Tick countdown every second while locked out
   useEffect(() => {
@@ -299,7 +299,7 @@ export function LoginView({ onLogin, onCreateSchool, onParentLogin }) {
                 textDecoration: 'underline', textUnderlineOffset: 3,
               }}
             >
-              Set up your school
+              Set Up A New School
             </button>
           </div>
 
@@ -329,7 +329,7 @@ export function LoginView({ onLogin, onCreateSchool, onParentLogin }) {
                   cursor: 'pointer', fontFamily: 'var(--font-body)',
                 }}
               >
-                I'm a parent →
+                Parent Login →
               </button>
             </div>
           )}
