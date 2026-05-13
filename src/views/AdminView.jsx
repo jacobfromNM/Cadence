@@ -358,7 +358,7 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
                     )}
                   </div>
                   {s.parent_code && (
-                    <button onClick={() => setShareStudent(s)} style={{ background: 'var(--blue-light)', border: 'none', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: 'var(--blue)', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap' }}>
+                    <button onClick={() => setShareStudent(s)} style={{ background: 'var(--blue-light)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--blue)', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap' }}>
                       Share Link
                     </button>
                   )}
