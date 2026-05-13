@@ -1,8 +1,8 @@
-# Cadence — Data & Privacy Disclosure
+# Cadence - Data & Privacy Disclosure
 
 **Last updated:** May 2026
 
-**Developer:** Jacob Davis | jacobfromNM
+**Developer:** Jacob Davis
 
 **Contact:** jacobfromnm@gmail.com
 
@@ -70,7 +70,7 @@ Cadence does **not** sell, rent, license, or otherwise share your data with any 
 Data is accessible to:
 
 - Staff and administrators at your school who hold valid login credentials
-- The application developer (Jacob | jacobfromNM) for the purposes of maintaining and troubleshooting the application
+- The application developer (Jacob Davis) for the purposes of maintaining and troubleshooting the application
 - Supabase and Vercel, as infrastructure providers, to the extent required to operate their services
 
 ---
@@ -136,7 +136,7 @@ The developer does not warrant that:
 
 ## 11. Limitation of Liability
 
-To the fullest extent permitted by applicable law, the developer of Cadence (Jacob | jacobfromNM) shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages arising from your use of or inability to use this application, including but not limited to:
+To the fullest extent permitted by applicable law, the developer of Cadence (Jacob Davis) shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages arising from your use of or inability to use this application, including but not limited to:
 
 - Loss or corruption of student or school data
 - Unauthorized access to data stored in the application

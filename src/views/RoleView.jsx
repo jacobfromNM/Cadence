@@ -28,8 +28,8 @@ function RoleCard({ icon, title, desc, badge, onClick, dashed }) {
       </div>
       {badge && <div style={{ marginRight: 4 }}>{badge}</div>}
       {/* Chevron */}
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18,flexShrink:0}}>
-        <polyline points="9 18 15 12 9 6"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18, flexShrink: 0 }}>
+        <polyline points="9 18 15 12 9 6" />
       </svg>
     </div>
   )
@@ -83,7 +83,7 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
         <RoleCard
           icon="🚗"
           title="Pickup Staff"
-          desc="I'm outside managing cadence"
+          desc="I'm outside managing the pickup line"
           onClick={() => onSelect('staff')}
         />
         <RoleCard

@@ -10,7 +10,7 @@ import { useToast } from '../context/ToastContext'
 const AVATAR_PALETTES = [
   { bg: 'oklch(0.88 0.08 245)', fg: 'oklch(0.45 0.18 245)' },
   { bg: 'oklch(0.88 0.08 150)', fg: 'oklch(0.42 0.16 150)' },
-  { bg: 'oklch(0.90 0.08 80)',  fg: 'oklch(0.50 0.14 80)'  },
+  { bg: 'oklch(0.90 0.08 80)', fg: 'oklch(0.50 0.14 80)' },
   { bg: 'oklch(0.88 0.08 310)', fg: 'oklch(0.45 0.18 310)' },
 ]
 
@@ -35,9 +35,9 @@ export function Avatar({ name, size = 40 }) {
 
 // ── StatusPill ─────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  requested: { label: 'Waiting',      dot: '🟡', bg: 'var(--yellow-light)', color: 'oklch(0.50 0.13 80)' },
-  sent:      { label: 'Student Sent', dot: '🔵', bg: 'var(--blue-light)',   color: 'var(--blue)'          },
-  complete:  { label: 'Complete',     dot: '🟢', bg: 'var(--green-light)',  color: 'var(--green)'         },
+  requested: { label: 'Waiting', dot: '🟡', bg: 'var(--yellow-light)', color: 'oklch(0.50 0.13 80)' },
+  sent: { label: 'Student Sent', dot: '🔵', bg: 'var(--blue-light)', color: 'var(--blue)' },
+  complete: { label: 'Complete', dot: '🟢', bg: 'var(--green-light)', color: 'var(--green)' },
 }
 
 export function StatusPill({ status }) {
@@ -57,9 +57,9 @@ export function StatusPill({ status }) {
 
 // ── RoleBadge ──────────────────────────────────────────────────
 const ROLE_CONFIG = {
-  staff:   { label: 'Pickup Staff', bg: 'var(--blue-light)',   color: 'var(--blue)'   },
-  teacher: { label: 'Teacher View', bg: 'var(--green-light)',  color: 'var(--green)'  },
-  admin:   { label: 'Admin View',   bg: 'var(--purple-light)', color: 'var(--purple)' },
+  staff: { label: 'Pickup View', bg: 'var(--blue-light)', color: 'var(--blue)' },
+  teacher: { label: 'Teacher View', bg: 'var(--green-light)', color: 'var(--green)' },
+  admin: { label: 'Settings View', bg: 'var(--purple-light)', color: 'var(--purple)' },
 }
 
 export function RoleBadge({ role }) {
@@ -81,8 +81,8 @@ export function RoleBadge({ role }) {
 const TOAST_ICONS = { success: '✓', error: '✕', info: 'ℹ' }
 const TOAST_STYLES = {
   success: { background: 'var(--green)', color: '#fff' },
-  error:   { background: 'var(--red)',   color: '#fff' },
-  info:    { background: 'var(--blue)',  color: '#fff' },
+  error: { background: 'var(--red)', color: '#fff' },
+  info: { background: 'var(--blue)', color: '#fff' },
 }
 
 export function ToastLayer() {
@@ -170,7 +170,7 @@ export function Input({ mono, style, ...props }) {
         ...style,
       }}
       onFocus={e => e.target.style.borderColor = 'var(--blue)'}
-      onBlur={e =>  e.target.style.borderColor = 'var(--border)'}
+      onBlur={e => e.target.style.borderColor = 'var(--border)'}
       {...props}
     />
   )
@@ -232,7 +232,7 @@ export function SearchBar({ value, onChange, placeholder }) {
     }}>
       {/* Search icon */}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
       <input
         value={value}
