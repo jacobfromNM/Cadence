@@ -59,7 +59,7 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
           borderRadius: 'var(--radius)',
           padding: '12px 14px',
           display: 'flex', alignItems: 'flex-start', gap: 8,
-          marginBottom: 4,
+          marginBottom: 10,
         }}>
           <span style={{ fontSize: 14, lineHeight: '20px', flexShrink: 0 }}>📣</span>
           <div style={{ flex: 1 }}>
