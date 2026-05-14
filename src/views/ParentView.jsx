@@ -167,8 +167,8 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
           // fall back to scanning our local ref by primary key id.
           const studentId = row.student_id
             || Object.keys(absentRowsRef.current).find(
-                sid => absentRowsRef.current[sid]?.id === row.id
-               )
+              sid => absentRowsRef.current[sid]?.id === row.id
+            )
           if (!studentId || !studentIds.includes(studentId)) return
           delete absentRowsRef.current[studentId]
           setAbsentIds(prev => { const n = new Set(prev); n.delete(studentId); return n })
@@ -337,6 +337,23 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
           <div style={{ fontSize: 14, color: banner.color, lineHeight: 1.5, fontWeight: banner.bold ? 700 : 400 }}>{banner.text}</div>
         </div>
 
+        {/* School Announcements */}
+        {announcement && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>School Announcements</div>
+            <div style={{
+              background: 'oklch(0.96 0.04 245)', border: '1.5px solid var(--blue)',
+              borderRadius: 'var(--radius)', padding: '14px 16px',
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+            }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>📣</span>
+              <div style={{ fontSize: 14, color: 'var(--blue)', fontWeight: 600, lineHeight: 1.5 }}>
+                {announcement}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Student cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>
@@ -386,23 +403,6 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
             )
           })}
         </div>
-
-        {/* School Announcements */}
-        {announcement && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>School Announcements</div>
-            <div style={{
-              background: 'oklch(0.96 0.04 245)', border: '1.5px solid var(--blue)',
-              borderRadius: 'var(--radius)', padding: '14px 16px',
-              display: 'flex', alignItems: 'flex-start', gap: 10,
-            }}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>📣</span>
-              <div style={{ fontSize: 14, color: 'var(--blue)', fontWeight: 600, lineHeight: 1.5 }}>
-                {announcement}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Add sibling */}
         {!showSiblingForm ? (
