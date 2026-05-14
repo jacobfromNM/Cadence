@@ -131,7 +131,19 @@ export function SetupView({ onComplete, onBack }) {
         border: '1px solid var(--border)',
         padding: '40px 32px',
         boxShadow: '0 8px 40px oklch(0.10 0.05 240 / 0.10)',
+        position: 'relative',
       }}>
+        {/* Back chevron */}
+        <button
+          onClick={handleBack}
+          disabled={saving}
+          style={{ position: 'absolute', top: 16, left: 16, background: 'none', border: 'none', cursor: saving ? 'default' : 'pointer', color: 'var(--blue)', padding: 6 }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+
         {/* Logo */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
           <div style={{
@@ -291,17 +303,6 @@ export function SetupView({ onComplete, onBack }) {
             }}
           >
             {saving ? 'Creating…' : step === 2 ? 'Create School' : 'Continue →'}
-          </button>
-          <button
-            onClick={handleBack}
-            disabled={saving}
-            style={{
-              background: 'none', color: 'var(--text-2)', border: 'none',
-              padding: '8px', fontSize: 14, cursor: saving ? 'default' : 'pointer',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            ← {step === 0 ? 'Back to sign in' : 'Back'}
           </button>
         </div>
       </div>

@@ -142,7 +142,7 @@ export function AppShell({ school, loginRole, viewRole, tab, onTabChange, onLogo
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                background: 'transparent', color: 'var(--text-3)',
+                background: 'transparent', color: 'var(--blue)',
                 fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500,
                 width: '100%', transition: 'all 0.15s',
               }}
@@ -162,22 +162,20 @@ export function AppShell({ school, loginRole, viewRole, tab, onTabChange, onLogo
             padding: '14px 16px 12px',
             background: 'var(--surface)',
             borderBottom: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            display: 'flex', alignItems: 'center', gap: 10,
             flexShrink: 0,
           }}>
-            <div>
+            <button
+              onClick={onLogout}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue)', padding: 6, marginLeft: -6, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{school.name}</div>
               <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{school.code}</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <RoleBadge role={effectiveRole} />
-              <button
-                onClick={onLogout}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4, display: 'flex', alignItems: 'center' }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-            </div>
+            <RoleBadge role={effectiveRole} />
           </div>
         )}
 

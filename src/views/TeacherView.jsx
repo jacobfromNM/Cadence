@@ -182,8 +182,16 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
         padding: '14px 16px 12px',
         background: 'oklch(0.96 0.04 150)',
         borderBottom: '1px solid oklch(0.88 0.06 150)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
       }}>
+        <button
+          onClick={() => setSelectedClass(null)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)', flexShrink: 0 }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
         <div>
           <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>
             {selectedClass.teacher_name} — {selectedClass.code}
@@ -192,12 +200,6 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
             {school.name}
           </div>
         </div>
-        <button
-          onClick={() => setSelectedClass(null)}
-          style={{ border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-2)', fontFamily: 'var(--font-body)', fontWeight: 600, padding: '6px 10px', borderRadius: 8, background: 'oklch(0.90 0.05 150)' }}
-        >
-          ← Change class
-        </button>
       </div>
 
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
