@@ -143,8 +143,19 @@ export function ParentLoginView({ onLogin, onBack }) {
         return
       }
 
+      // Load all siblings linked under the same parent_group_id
+      let studentIds = [studentData.id]
+      if (studentData.parent_group_id) {
+        const { data: siblings } = await supabase
+          .from('students').select('id')
+          .eq('school_id', schoolData.id)
+          .eq('parent_group_id', studentData.parent_group_id)
+        if (siblings && siblings.length > 0)
+          studentIds = siblings.map(s => s.id)
+      }
+
       setAttempts(0)
-      onLogin({ school: schoolData, studentIds: [studentData.id] })
+      onLogin({ school: schoolData, studentIds })
     } catch (e) {
       setErr(e.message || 'Something went wrong. Try again.')
     } finally {
@@ -192,12 +203,13 @@ export function ParentLoginView({ onLogin, onBack }) {
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Student Code</label>
               <Input
                 mono
-                placeholder="6-digit code"
+                placeholder="e.g. JO123456"
                 value={studentCode}
-                onChange={e => { setStudentCode(e.target.value.replace(/\D/g, '')); setErr('') }}
+                onChange={e => { setStudentCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()); setErr('') }}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                inputMode="numeric"
-                maxLength={10}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                maxLength={8}
                 disabled={isLocked || loading}
                 style={{ letterSpacing: '0.1em' }}
               />

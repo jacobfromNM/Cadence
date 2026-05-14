@@ -43,7 +43,8 @@ create table public.students (
   school_id   uuid not null references public.schools(id) on delete cascade,
   class_id    uuid not null references public.classes(id) on delete cascade,
   name        text not null,
-  parent_code text,                             -- auto-generated 6-digit code for parent login
+  parent_code     text,                         -- auto-generated code for parent login ([2-letter prefix][6 digits])
+  parent_group_id uuid,                         -- shared UUID across linked siblings; null = unlinked
   created_at  timestamptz default now(),
   -- Prevents duplicate names within the same class on re-import
   unique(school_id, class_id, name),

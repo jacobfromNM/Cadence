@@ -498,11 +498,12 @@ export function CadenceProvider({ children }) {
     const targetSchoolId = sid || schoolId
     const trimmed = name.trim()
 
-    // Generate a unique 6-digit parent_code for this school
+    // Generate a unique parent_code: [first 2 letters of first name][6 random digits]
+    const namePrefix = trimmed.split(' ')[0].slice(0, 2).toUpperCase()
     let parentCode
     let codeExists = true
     while (codeExists) {
-      parentCode = String(Math.floor(100000 + Math.random() * 900000))
+      parentCode = namePrefix + String(Math.floor(100000 + Math.random() * 900000))
       const { data: found } = await supabase
         .from('students')
         .select('id')
@@ -511,6 +512,7 @@ export function CadenceProvider({ children }) {
         .maybeSingle()
       codeExists = !!found
     }
+    const parentGroupId = crypto.randomUUID()
 
     // Upsert so re-importing the same roster doesn't create duplicates.
     // The unique constraint (school_id, class_id, name) lives in the schema;
@@ -520,7 +522,7 @@ export function CadenceProvider({ children }) {
     const { data, error } = await supabase
       .from('students')
       .upsert(
-        { name: trimmed, class_id: classId, school_id: targetSchoolId, parent_code: parentCode },
+        { name: trimmed, class_id: classId, school_id: targetSchoolId, parent_code: parentCode, parent_group_id: parentGroupId },
         { onConflict: 'school_id,class_id,name', ignoreDuplicates: true }
       )
       .select()

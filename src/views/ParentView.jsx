@@ -174,11 +174,25 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
     setSiblingErr('')
     setSiblingLoading(true)
     try {
-      const { data } = await supabase.from('students').select('id, name')
+      const { data: sibling } = await supabase.from('students').select('id, name, parent_group_id')
         .eq('school_id', school.id).eq('parent_code', code).maybeSingle()
-      if (!data) { setSiblingErr('Student code not found at this school.'); return }
-      if (studentIds.includes(data.id)) { setSiblingErr('That student is already linked.'); return }
-      const updated = [...studentIds, data.id]
+      if (!sibling) { setSiblingErr('Student code not found at this school.'); return }
+      if (studentIds.includes(sibling.id)) { setSiblingErr('That student is already linked.'); return }
+
+      // Determine or create the shared parent_group_id
+      const { data: existingStudents } = await supabase.from('students').select('id, parent_group_id')
+        .in('id', studentIds)
+      const existingGroupId = existingStudents?.find(s => s.parent_group_id)?.parent_group_id
+      const groupId = existingGroupId || crypto.randomUUID()
+
+      // If group was just created, update all currently-linked students
+      if (!existingGroupId) {
+        await supabase.from('students').update({ parent_group_id: groupId }).in('id', studentIds)
+      }
+      // Link the new sibling into the group
+      await supabase.from('students').update({ parent_group_id: groupId }).eq('id', sibling.id)
+
+      const updated = [...studentIds, sibling.id]
       setStudentIds(updated)
       saveIds(updated)
       setSiblingCode('')
@@ -187,6 +201,18 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
       setSiblingErr('Something went wrong. Try again.')
     } finally {
       setSiblingLoading(false)
+    }
+  }
+
+  const handleUnlink = async (studentId) => {
+    try {
+      await supabase.from('students').update({ parent_group_id: null }).eq('id', studentId)
+      const updated = studentIds.filter(id => id !== studentId)
+      setStudentIds(updated)
+      saveIds(updated)
+      setStudents(prev => prev.filter(s => s.id !== studentId))
+    } catch {
+      // silently ignore — student card stays visible
     }
   }
 
@@ -239,12 +265,20 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
                 <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blue-light)', color: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
                   {stu.name.charAt(0).toUpperCase()}
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{stu.name}</div>
                   {label && (
                     <div style={{ fontSize: 12, color: label.color, fontWeight: 600, marginTop: 2 }}>{label.text}</div>
                   )}
                 </div>
+                {students.length > 1 && (
+                  <button
+                    onClick={() => handleUnlink(stu.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-body)', fontWeight: 600, padding: '4px 6px', borderRadius: 6, flexShrink: 0 }}
+                  >
+                    Unlink
+                  </button>
+                )}
               </div>
             )
           })}
@@ -263,11 +297,12 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Add Sibling</div>
             <input
               value={siblingCode}
-              onChange={e => { setSiblingCode(e.target.value.replace(/\D/g, '')); setSiblingErr('') }}
+              onChange={e => { setSiblingCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()); setSiblingErr('') }}
               onKeyDown={e => e.key === 'Enter' && handleAddSibling()}
-              placeholder="Student code"
-              inputMode="numeric"
-              maxLength={10}
+              placeholder="e.g. JO123456"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              maxLength={8}
               style={{ background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--text)', outline: 'none', letterSpacing: '0.1em' }}
             />
             {siblingErr && <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 600 }}>{siblingErr}</div>}
