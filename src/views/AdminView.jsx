@@ -270,7 +270,10 @@ function ActiveHoursScreen({ school, onBack, onSaved }) {
               </div>
 
               {/* Time range */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 12, width: '100%',
+                minWidth: 0
+              }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Start time</label>
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
