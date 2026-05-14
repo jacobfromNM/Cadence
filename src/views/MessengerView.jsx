@@ -79,7 +79,7 @@ export function MessengerView({ school, onLogout }) {
                 width: '100%', resize: 'vertical',
                 background: 'var(--bg)', border: `1.5px solid ${overLimit ? 'var(--red)' : 'var(--border)'}`,
                 borderRadius: 8, padding: '10px 12px',
-                fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text)',
+                fontFamily: 'var(--font-body)', fontSize: 16, color: 'var(--text)',
                 outline: 'none', lineHeight: 1.5, boxSizing: 'border-box',
               }}
             />

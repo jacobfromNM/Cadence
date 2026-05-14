@@ -84,7 +84,7 @@ function StudentAddForm({ classId, classes, onAdded }) {
             onChange={e => setName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleOne()}
             placeholder="Student name"
-            style={{ padding: '10px 12px', fontSize: 14 }}
+            style={{ padding: '10px 12px', fontSize: 16 }}
           />
           <button onClick={handleOne} style={{ background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', fontSize: 20, cursor: 'pointer' }}>+</button>
         </div>
@@ -99,7 +99,7 @@ function StudentAddForm({ classId, classes, onAdded }) {
             style={{
               background: 'var(--surface)', border: '1.5px solid var(--border)',
               borderRadius: 8, padding: '10px 12px',
-              fontFamily: 'var(--font-mono)', fontSize: 13,
+              fontFamily: 'var(--font-mono)', fontSize: 16,
               color: 'var(--text)', outline: 'none', resize: 'none', width: '100%',
             }}
           />
@@ -209,7 +209,7 @@ function ActiveHoursScreen({ school, onBack, onSaved }) {
             value={timezone}
             onChange={e => setTimezone(e.target.value)}
             style={{
-              width: '100%', padding: '10px 12px', fontSize: 13,
+              width: '100%', padding: '10px 12px', fontSize: 16,
               border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
               background: 'var(--bg)', color: 'var(--text)',
               fontFamily: 'var(--font-body)', cursor: 'pointer', boxSizing: 'border-box',

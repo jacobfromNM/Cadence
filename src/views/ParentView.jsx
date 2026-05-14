@@ -423,7 +423,7 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
               autoCapitalize="characters"
               autoCorrect="off"
               maxLength={8}
-              style={{ background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--text)', outline: 'none', letterSpacing: '0.1em' }}
+              style={{ background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--text)', outline: 'none', letterSpacing: '0.1em' }}
             />
             {siblingErr && <div style={{ fontSize: 13, color: 'var(--red)', fontWeight: 600 }}>{siblingErr}</div>}
             <div style={{ display: 'flex', gap: 8 }}>
