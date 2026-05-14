@@ -36,7 +36,7 @@ function RoleCard({ icon, title, desc, badge, onClick, dashed }) {
   )
 }
 
-export function RoleView({ school, loginRole, onSelect, onLogout }) {
+export function RoleView({ school, loginRole, onSelect, onLogout, onHelp }) {
   const isAdmin = loginRole === 'admin'
   const { announcement } = useCadence()
 
@@ -147,6 +147,22 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
         //   </span>
         // ) : undefined}
         />
+
+        {onHelp && (
+          <div style={{ textAlign: 'center', marginTop: 8 }}>
+            <button
+              onClick={onHelp}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 13, color: 'var(--text-3)', fontFamily: 'var(--font-body)',
+                display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 8px',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Help &amp; Docs
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

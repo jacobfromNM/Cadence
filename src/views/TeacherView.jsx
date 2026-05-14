@@ -37,7 +37,7 @@ const C = {
   glow:    (urgent) => urgent ? '0 0 0 3px oklch(0.70 0.22 25 / 0.20)' : '0 0 0 3px oklch(0.80 0.14 80 / 0.20)',
 }
 
-export function TeacherView({ school, loginRole, viewRole, onLogout }) {
+export function TeacherView({ school, loginRole, viewRole, onLogout, onHelp }) {
   const {
     classes, students, pickups, absent,
     sendStudent, markAbsent, markPresent, formatTime,
@@ -58,7 +58,7 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
     const anyUrgent = allActive.some(s => elapsedMins(pickups[s.id]?.requested_at, now) > 3)
 
     return (
-      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}>
         <ParentNearbyAlert />
         {school?.active_start_time && !isWithinActiveHours(school) && (
           <div style={{ background: 'var(--yellow-light)', borderBottom: '1px solid var(--yellow)', padding: '10px 16px', fontSize: 13, color: 'oklch(0.45 0.13 80)', fontWeight: 600, flexShrink: 0 }}>
@@ -170,7 +170,7 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
   const absentList = myStudents.filter(s => absent.has(s.id))
 
   return (
-    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}>
       <ParentNearbyAlert />
       {school?.active_start_time && !isWithinActiveHours(school) && (
         <div style={{ background: 'var(--yellow-light)', borderBottom: '1px solid var(--yellow)', padding: '10px 16px', fontSize: 13, color: 'oklch(0.45 0.13 80)', fontWeight: 600, flexShrink: 0 }}>

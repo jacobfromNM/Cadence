@@ -1103,7 +1103,7 @@ function AnalyticsScreen({ onBack }) {
 }
 
 // ── AdminView root ────────────────────────────────────────────
-export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, onSchoolDelete }) {
+export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, onSchoolDelete, onHelp }) {
   const { classes, students, resetPickups, resetClassroomData, deleteSchool } = useCadence()
   const { showToast } = useToast()
   const isAdmin = loginRole === 'admin'
@@ -1116,16 +1116,16 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, o
   // Local copy so school location updates reflect immediately without re-login
   const [school, setSchool] = useState(schoolProp)
 
-  if (view === 'addClass') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
-  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><EditClassScreen cls={selectedClass} school={school} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
-  if (view === 'changePin') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><ChangePinScreen school={school} onBack={() => setView('menu')} /></AppShell>
-  if (view === 'analytics') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><AnalyticsScreen onBack={() => setView('menu')} /></AppShell>
-  if (view === 'schoolLocation') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><SchoolLocationScreen school={school} onBack={() => setView('menu')} onSaved={(loc) => { setSchool(s => ({ ...s, ...loc })); setView('menu') }} /></AppShell>
-  if (view === 'activeHours') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><ActiveHoursScreen school={school} onBack={() => setView('menu')} onSaved={(updates) => { setSchool(s => ({ ...s, ...updates })); setView('menu') }} /></AppShell>
+  if (view === 'addClass') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}><AddClassWizard onBack={() => setView('menu')} onDone={() => setView('menu')} /></AppShell>
+  if (view === 'editingClass' && selectedClass) return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}><EditClassScreen cls={selectedClass} school={school} onBack={() => setView('editClass')} isAdmin={isAdmin} /></AppShell>
+  if (view === 'changePin') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}><ChangePinScreen school={school} onBack={() => setView('menu')} /></AppShell>
+  if (view === 'analytics') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}><AnalyticsScreen onBack={() => setView('menu')} /></AppShell>
+  if (view === 'schoolLocation') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}><SchoolLocationScreen school={school} onBack={() => setView('menu')} onSaved={(loc) => { setSchool(s => ({ ...s, ...loc })); setView('menu') }} /></AppShell>
+  if (view === 'activeHours') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}><ActiveHoursScreen school={school} onBack={() => setView('menu')} onSaved={(updates) => { setSchool(s => ({ ...s, ...updates })); setView('menu') }} /></AppShell>
 
   if (view === 'editClass') {
     return (
-      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <button onClick={() => setView('menu')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
@@ -1166,7 +1166,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, o
   ]
 
   return (
-    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout} onHelp={onHelp}>
       {/* <AnnouncementBanner /> */}
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
         {/* Stats */}

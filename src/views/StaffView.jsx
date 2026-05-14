@@ -385,20 +385,20 @@ function ClassDrillScreen({ cls, onBack }) {
 }
 
 // ── StaffView root ────────────────────────────────────────────
-export function StaffView({ school, loginRole, viewRole, onLogout }) {
+export function StaffView({ school, loginRole, viewRole, onLogout, onHelp }) {
   const [tab, setTab]           = useState('students')
   const [drillClass, setDrillClass] = useState(null)
 
   if (drillClass) {
     return (
-      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
+      <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout} onHelp={onHelp}>
         <ClassDrillScreen cls={drillClass} onBack={() => setDrillClass(null)} />
       </AppShell>
     )
   }
 
   return (
-    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
+    <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout} onHelp={onHelp}>
       <ParentNearbyAlert />
       {school?.active_start_time && !isWithinActiveHours(school) && (
         <div style={{ background: 'var(--yellow-light)', borderBottom: '1px solid var(--yellow)', padding: '10px 16px', fontSize: 13, color: 'oklch(0.45 0.13 80)', fontWeight: 600, flexShrink: 0 }}>

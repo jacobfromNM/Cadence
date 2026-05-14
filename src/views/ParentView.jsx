@@ -46,7 +46,7 @@ function studentPickupLabel(pickup) {
   return null
 }
 
-export function ParentView({ school, initialStudentIds, onLogout }) {
+export function ParentView({ school, initialStudentIds, onLogout, onHelp }) {
   const [studentIds, setStudentIds] = useState(() => {
     const stored = loadStoredIds()
     const merged = [...new Set([...initialStudentIds, ...stored])]
@@ -329,12 +329,22 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
           <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Cadence</span>
           <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 2 }}>Parent</span>
         </div>
-        <button
-          onClick={handleLogout}
-          style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-        >
-          Sign Out
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {onHelp && (
+            <button
+              onClick={onHelp}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 6, display: 'flex', alignItems: 'center' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </button>
+          )}
+          <button
+            onClick={handleLogout}
+            style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
 
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>

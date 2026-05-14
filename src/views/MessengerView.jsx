@@ -10,7 +10,7 @@ import { useToast } from '../context/ToastContext'
 
 const MAX_CHARS = 140
 
-export function MessengerView({ school, onLogout }) {
+export function MessengerView({ school, onLogout, onHelp }) {
   const { announcement, sendAnnouncement, clearAnnouncement } = useCadence()
   const { showToast } = useToast()
   const [draft, setDraft] = useState('')
@@ -59,6 +59,14 @@ export function MessengerView({ school, onLogout }) {
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 1 }}>{school.name}</div>
           </div>
         </div>
+        {onHelp && (
+          <button
+            onClick={onHelp}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 6, marginRight: -6, display: 'flex', alignItems: 'center' }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
+        )}
       </div>
 
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>

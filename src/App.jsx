@@ -22,6 +22,7 @@ import { SetupView } from './views/SetupView'
 import { ParentLoginView } from './views/ParentLoginView'
 import { ParentView } from './views/ParentView'
 import { MessengerView } from './views/MessengerView'
+import { HelpView } from './views/HelpView'
 import { supabase } from './lib/supabase'
 
 // ── Inner app — needs access to CadenceProvider context ───────
@@ -40,6 +41,9 @@ function InnerApp() {
   // Parent session state
   const [parentSchool,     setParentSchool]     = useState(null)
   const [parentStudentIds, setParentStudentIds] = useState([])
+  // Help screen
+  const [helpReturnScreen, setHelpReturnScreen] = useState(null)
+  const [helpRole,         setHelpRole]         = useState(null)
 
   // Called by LoginView after the user enters a school code + PIN.
   // Looks up the school in Supabase and validates the PIN.
@@ -150,6 +154,12 @@ function InnerApp() {
 
   const handleBackToRole = () => setScreen('role')
 
+  const navigateToHelp = (returnScreen, role) => {
+    setHelpReturnScreen(returnScreen)
+    setHelpRole(role)
+    setScreen('help')
+  }
+
   return (
     <>
       <ToastLayer />
@@ -174,6 +184,7 @@ function InnerApp() {
           school={parentSchool}
           initialStudentIds={parentStudentIds}
           onLogout={handleParentLogout}
+          onHelp={() => navigateToHelp('parent', 'parent')}
         />
       )}
 
@@ -190,6 +201,7 @@ function InnerApp() {
           loginRole={loginRole}
           onSelect={handleRoleSelect}
           onLogout={handleLogout}
+          onHelp={() => navigateToHelp('role', null)}
         />
       )}
 
@@ -199,6 +211,7 @@ function InnerApp() {
           loginRole={loginRole}
           viewRole={viewRole}
           onLogout={handleBackToRole}
+          onHelp={() => navigateToHelp('staff', 'staff')}
         />
       )}
 
@@ -208,6 +221,7 @@ function InnerApp() {
           loginRole={loginRole}
           viewRole={viewRole}
           onLogout={handleBackToRole}
+          onHelp={() => navigateToHelp('teacher', 'teacher')}
         />
       )}
 
@@ -218,6 +232,7 @@ function InnerApp() {
           viewRole={viewRole}
           onLogout={handleBackToRole}
           onSchoolDelete={handleLogout}
+          onHelp={() => navigateToHelp('admin', 'admin')}
         />
       )}
 
@@ -225,6 +240,14 @@ function InnerApp() {
         <MessengerView
           school={school}
           onLogout={handleBackToRole}
+          onHelp={() => navigateToHelp('messenger', 'admin')}
+        />
+      )}
+
+      {screen === 'help' && (
+        <HelpView
+          role={helpRole}
+          onBack={() => setScreen(helpReturnScreen ?? 'login')}
         />
       )}
     </>
