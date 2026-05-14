@@ -9,6 +9,7 @@ import { useToast } from '../context/ToastContext'
 import { Avatar, StatusPill, EmptyState, SectionLabel, SearchBar } from '../components/ui'
 import { AppShell } from '../components/AppShell'
 import { ParentNearbyAlert } from '../components/ParentNearbyAlert'
+import { isWithinActiveHours } from '../lib/activeHours'
 
 // ── Shared back-button header used in drill-down screens ──────
 function ScreenHeader({ onBack, title, subtitle, right }) {
@@ -147,6 +148,9 @@ function StudentsTab({ onDrillClass }) {
                   <Avatar name={s.name} size={38} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{s.name}</div>
+                    {s.parent_code && (
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 1, letterSpacing: '0.06em' }}>{s.parent_code}</div>
+                    )}
                     <div style={{ fontSize: 12, color: 'var(--text-2)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                       {cls?.code} · {cls?.teacher_name}
                     </div>
@@ -195,6 +199,9 @@ function StudentsTab({ onDrillClass }) {
               <Avatar name={s.name} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{s.name}</div>
+                {s.parent_code && (
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 1, letterSpacing: '0.06em' }}>{s.parent_code}</div>
+                )}
                 <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 1 }}>{cls?.code} · {cls?.teacher_name}</div>
               </div>
               <div style={{ flexShrink: 0 }}>
@@ -355,6 +362,9 @@ function ClassDrillScreen({ cls, onBack }) {
               <Avatar name={s.name} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{s.name}</div>
+                {s.parent_code && (
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 1, letterSpacing: '0.06em' }}>{s.parent_code}</div>
+                )}
                 {pickup && <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>Req. {formatTime(pickup.requested_at)}</div>}
               </div>
               {absent ? (
@@ -390,6 +400,11 @@ export function StaffView({ school, loginRole, viewRole, onLogout }) {
   return (
     <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
       <ParentNearbyAlert />
+      {school?.active_start_time && !isWithinActiveHours(school) && (
+        <div style={{ background: 'var(--yellow-light)', borderBottom: '1px solid var(--yellow)', padding: '10px 16px', fontSize: 13, color: 'oklch(0.45 0.13 80)', fontWeight: 600, flexShrink: 0 }}>
+          Outside active hours — pickup requests are not currently being processed
+        </div>
+      )}
       {tab === 'students' && <StudentsTab onDrillClass={setDrillClass} />}
       {tab === 'active'   && <ActiveTab />}
       {tab === 'classes'  && <ClassesTab onDrill={setDrillClass} />}

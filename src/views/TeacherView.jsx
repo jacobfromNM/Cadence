@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext'
 import { Avatar, StatusPill, EmptyState, SectionLabel } from '../components/ui'
 import { AppShell } from '../components/AppShell'
 import { ParentNearbyAlert } from '../components/ParentNearbyAlert'
+import { isWithinActiveHours } from '../lib/activeHours'
 
 // Ticks every 10 seconds so wait-time badges stay fresh
 function useNow() {
@@ -59,6 +60,11 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
     return (
       <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
         <ParentNearbyAlert />
+        {school?.active_start_time && !isWithinActiveHours(school) && (
+          <div style={{ background: 'var(--yellow-light)', borderBottom: '1px solid var(--yellow)', padding: '10px 16px', fontSize: 13, color: 'oklch(0.45 0.13 80)', fontWeight: 600, flexShrink: 0 }}>
+            Outside active hours — pickup requests are not currently being processed
+          </div>
+        )}
         <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
 
           {/* Cross-class active summary */}
@@ -86,6 +92,9 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
                       <Avatar name={s.name} size={34} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{s.name}</div>
+                        {s.parent_code && (
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 1, letterSpacing: '0.06em' }}>{s.parent_code}</div>
+                        )}
                         <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
                           {cls?.code} · {cls?.teacher_name}
                         </div>
@@ -163,6 +172,11 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
   return (
     <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
       <ParentNearbyAlert />
+      {school?.active_start_time && !isWithinActiveHours(school) && (
+        <div style={{ background: 'var(--yellow-light)', borderBottom: '1px solid var(--yellow)', padding: '10px 16px', fontSize: 13, color: 'oklch(0.45 0.13 80)', fontWeight: 600, flexShrink: 0 }}>
+          Outside active hours — pickup requests are not currently being processed
+        </div>
+      )}
       {/* Class header */}
       <div style={{
         padding: '14px 16px 12px',
@@ -213,6 +227,9 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
                       <Avatar name={s.name} size={44} />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{s.name}</div>
+                        {s.parent_code && (
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 1, letterSpacing: '0.06em' }}>{s.parent_code}</div>
+                        )}
                         <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginTop: 1 }}>
                           Parent arrived · {formatTime(pickups[s.id]?.requested_at)}
                           {pickups[s.id]?.requested_at && (
@@ -261,6 +278,9 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
                   <Avatar name={s.name} size={38} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{s.name}</div>
+                    {s.parent_code && (
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 1, letterSpacing: '0.06em' }}>{s.parent_code}</div>
+                    )}
                     <div style={{ fontSize: 12, color: 'var(--blue)', marginTop: 1 }}>
                       Sent out · {formatTime(pickups[s.id]?.sent_at)} · Waiting for staff to confirm
                     </div>
@@ -306,7 +326,12 @@ export function TeacherView({ school, loginRole, viewRole, onLogout }) {
                 {stillHere.map(s => (
                   <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderBottom: '1px solid var(--border)' }}>
                     <Avatar name={s.name} size={32} />
-                    <div style={{ flex: 1, fontSize: 15, color: 'var(--text)', fontWeight: 500 }}>{s.name}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, color: 'var(--text)', fontWeight: 500 }}>{s.name}</div>
+                      {s.parent_code && (
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 1, letterSpacing: '0.06em' }}>{s.parent_code}</div>
+                      )}
+                    </div>
                     <button
                       onClick={() => markAbsent(s.id)}
                       style={{ background: 'oklch(0.94 0.04 60)', border: '1px solid oklch(0.82 0.10 60)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: 'oklch(0.45 0.13 55)' }}

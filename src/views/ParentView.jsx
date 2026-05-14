@@ -8,38 +8,40 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { haversineMeters } from '../lib/haversine'
+import { isWithinActiveHours } from '../lib/activeHours'
 
 const NEARBY_METERS = 400
-const STORAGE_KEY   = 'cadence_parent_students'
+const STORAGE_KEY = 'cadence_parent_students'
 
 function loadStoredIds() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
 }
 function saveIds(ids) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)) } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)) } catch { }
 }
 
 // Determine what banner to show based on location + pickup state.
 // pickups: { [studentId]: pickup_row }
 function resolveBanner(geoStatus, pickups, studentIds, locationErr) {
-  if (geoStatus === 'idle')     return { bg: 'var(--surface)',      border: 'var(--border)', icon: '📍', color: 'var(--text-2)', text: 'Allow location access to notify pickup staff when you arrive.', bold: false }
-  if (geoStatus === 'locating') return { bg: 'var(--blue-light)',   border: 'var(--blue)',   icon: '📡', color: 'var(--blue)',   text: "Watching your location — staff will be notified when you're nearby.", bold: false }
-  if (geoStatus === 'error')    return { bg: 'oklch(0.97 0.04 25)', border: 'var(--red)',    icon: '⚠️', color: 'var(--red)',   text: locationErr, bold: false }
+  if (geoStatus === 'outsideHours') return { bg: 'var(--yellow-light)', border: 'var(--yellow)', icon: '🕐', color: 'oklch(0.45 0.13 80)', text: 'Outside active hours — your location is not being shared with the school.', bold: false }
+  if (geoStatus === 'idle') return { bg: 'var(--surface)', border: 'var(--border)', icon: '📍', color: 'var(--text-2)', text: 'Allow location access to notify pickup staff when you arrive.', bold: false }
+  if (geoStatus === 'locating') return { bg: 'var(--blue-light)', border: 'var(--blue)', icon: '📡', color: 'var(--blue)', text: "Watching your location - staff will be notified when you're nearby.", bold: false }
+  if (geoStatus === 'error') return { bg: 'oklch(0.97 0.04 25)', border: 'var(--red)', icon: '⚠️', color: 'var(--red)', text: locationErr, bold: false }
 
   // geoStatus === 'nearby' — show pickup-based message
   const statuses = studentIds.map(id => pickups[id]?.status ?? null)
-  const allComplete  = statuses.length > 0 && statuses.every(s => s === 'complete')
-  const anyActive    = statuses.some(s => s === 'requested' || s === 'sent')
+  const allComplete = statuses.length > 0 && statuses.every(s => s === 'complete')
+  const anyActive = statuses.some(s => s === 'requested' || s === 'sent')
 
-  if (allComplete) return { bg: 'var(--green-light)', border: 'var(--green)', icon: '✅', color: 'var(--green)', text: 'Picked up! See you tomorrow.', bold: true }
-  if (anyActive)   return { bg: 'var(--yellow)',       border: 'oklch(0.78 0.16 85)', icon: '🏃', color: 'oklch(0.38 0.12 80)', text: 'Getting your student ready for pickup…', bold: true }
-  return               { bg: 'var(--green-light)', border: 'var(--green)', icon: '✅', color: 'var(--green)', text: 'Staff have been notified — pull up to the pickup zone.', bold: true }
+  if (allComplete) return { bg: 'var(--green-light)', border: 'var(--green)', icon: '✅', color: 'var(--green)', text: 'Picked up! Have a nice day!', bold: true }
+  if (anyActive) return { bg: 'var(--yellow)', border: 'oklch(0.78 0.16 85)', icon: '🏃', color: 'oklch(0.38 0.12 80)', text: 'Getting your student ready for pickup…', bold: true }
+  return { bg: 'var(--green-light)', border: 'var(--green)', icon: '✅', color: 'var(--green)', text: 'Staff have been notified - safely approachthe pickup zone.', bold: true }
 }
 
 function studentPickupLabel(pickup) {
   if (!pickup) return null
-  if (pickup.status === 'complete')  return { text: 'Picked up!', color: 'var(--green)' }
-  if (pickup.status === 'sent')      return { text: 'On the way out…', color: 'oklch(0.45 0.12 80)' }
+  if (pickup.status === 'complete') return { text: 'Picked up!', color: 'var(--green)' }
+  if (pickup.status === 'sent') return { text: 'On the way out…', color: 'oklch(0.45 0.12 80)' }
   if (pickup.status === 'requested') return { text: 'Getting ready…', color: 'oklch(0.45 0.12 80)' }
   return null
 }
@@ -51,14 +53,15 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
     saveIds(merged)
     return merged
   })
-  const [students,   setStudents]   = useState([])
-  const [pickups,    setPickups]    = useState({})  // { [studentId]: pickup_row }
-  const [geoStatus,  setGeoStatus]  = useState('idle')
+  const [students, setStudents] = useState([])
+  const [pickups, setPickups] = useState({})  // { [studentId]: pickup_row }
+  const [geoStatus, setGeoStatus] = useState('idle')
   const [locationErr, setLocationErr] = useState('')
+  const [absentIds, setAbsentIds] = useState(new Set())
 
   // Sibling add form
-  const [siblingCode,    setSiblingCode]    = useState('')
-  const [siblingErr,     setSiblingErr]     = useState('')
+  const [siblingCode, setSiblingCode] = useState('')
+  const [siblingErr, setSiblingErr] = useState('')
   const [siblingLoading, setSiblingLoading] = useState(false)
   const [showSiblingForm, setShowSiblingForm] = useState(false)
 
@@ -67,7 +70,7 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
   // Fetch student details whenever studentIds changes
   useEffect(() => {
     if (!studentIds.length) return
-    supabase.from('students').select('id, name, class_id').in('id', studentIds)
+    supabase.from('students').select('id, name, class_id, parent_code').in('id', studentIds)
       .then(({ data }) => { if (data) setStudents(data) })
   }, [studentIds])
 
@@ -115,8 +118,28 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
     return () => supabase.removeChannel(channel)
   }, [studentIds, school.id])
 
+  // Fetch + watch absent status for these students
+  useEffect(() => {
+    if (!studentIds.length) return
+    const today = new Date().toISOString().slice(0, 10)
+    supabase.from('absent_today').select('student_id').in('student_id', studentIds).eq('date', today)
+      .then(({ data }) => { if (data) setAbsentIds(new Set(data.map(r => r.student_id))) })
+
+    const channel = supabase.channel(`parent_absent:${school.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'absent_today', filter: `school_id=eq.${school.id}` },
+        ({ new: row }) => { if (studentIds.includes(row.student_id)) setAbsentIds(prev => new Set([...prev, row.student_id])) })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'absent_today', filter: `school_id=eq.${school.id}` },
+        ({ old: row }) => { if (studentIds.includes(row.student_id)) setAbsentIds(prev => { const n = new Set(prev); n.delete(row.student_id); return n }) })
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [studentIds, school.id])
+
   // Geolocation watcher
   useEffect(() => {
+    if (school.active_start_time && !isWithinActiveHours(school)) {
+      setGeoStatus('outsideHours')
+      return
+    }
     if (!school.latitude || !school.longitude) {
       setGeoStatus('error')
       setLocationErr('School location is not configured yet. Ask your school admin to set it up.')
@@ -133,7 +156,7 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const dist = haversineMeters(
-          { latitude: pos.coords.latitude,  longitude: pos.coords.longitude },
+          { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
           { latitude: Number(school.latitude), longitude: Number(school.longitude) }
         )
         if (dist < NEARBY_METERS) {
@@ -165,7 +188,7 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
     )
 
     return () => navigator.geolocation.clearWatch(watchId)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentIds, school])
 
   const handleAddSibling = async () => {
@@ -216,6 +239,18 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
     }
   }
 
+  const handleMarkAbsent = async (studentId) => {
+    const today = new Date().toISOString().slice(0, 10)
+    setAbsentIds(prev => new Set([...prev, studentId]))
+    await supabase.from('absent_today').upsert({ student_id: studentId, school_id: school.id, date: today })
+  }
+
+  const handleMarkPresent = async (studentId) => {
+    const today = new Date().toISOString().slice(0, 10)
+    setAbsentIds(prev => { const n = new Set(prev); n.delete(studentId); return n })
+    await supabase.from('absent_today').delete().eq('student_id', studentId).eq('date', today)
+  }
+
   const handleLogout = () => {
     saveIds([])
     notifiedIds.current.clear()
@@ -260,15 +295,34 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
           </div>
           {students.map(stu => {
             const label = geoStatus === 'nearby' ? studentPickupLabel(pickups[stu.id]) : null
+            const isAbsent = absentIds.has(stu.id)
+            const hasActivePickup = !!pickups[stu.id]
             return (
-              <div key={stu.id} style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div key={stu.id} style={{
+                background: isAbsent ? 'var(--yellow-light)' : 'var(--surface)',
+                border: `1.5px solid ${isAbsent ? 'var(--yellow)' : 'var(--border)'}`,
+                borderRadius: 'var(--radius)', padding: '14px 16px',
+                display: 'flex', alignItems: 'center', gap: 12,
+                opacity: isAbsent ? 0.85 : 1,
+              }}>
                 <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blue-light)', color: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
                   {stu.name.charAt(0).toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{stu.name}</div>
+                  {stu.parent_code && (
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)', marginTop: 2, letterSpacing: '0.06em' }}>{stu.parent_code}</div>
+                  )}
                   {label && (
                     <div style={{ fontSize: 12, color: label.color, fontWeight: 600, marginTop: 2 }}>{label.text}</div>
+                  )}
+                  {isAbsent ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: 'oklch(0.45 0.13 80)', fontWeight: 600 }}>Marked absent today</div>
+                      <button onClick={() => handleMarkPresent(stu.id)} style={{ fontSize: 11, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', padding: 0, textDecoration: 'underline' }}>Undo</button>
+                    </div>
+                  ) : !hasActivePickup && (
+                    <button onClick={() => handleMarkAbsent(stu.id)} style={{ marginTop: 4, fontSize: 11, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', padding: 0, textDecoration: 'underline' }}>Mark absent today</button>
                   )}
                 </div>
                 {students.length > 1 && (

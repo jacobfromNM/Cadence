@@ -201,6 +201,13 @@ select cron.schedule(
 --   create policy "allow_all_parent_nearby" on public.parent_nearby for all using (true) with check (true);
 --   grant select, insert, update, delete on public.parent_nearby to anon, authenticated;
 --   alter publication supabase_realtime add table public.parent_nearby;
+--
+-- Active hours feature (added later):
+--
+--   alter table public.schools add column if not exists active_days integer[] default '{1,2,3,4,5}';
+--   alter table public.schools add column if not exists active_start_time time;
+--   alter table public.schools add column if not exists active_end_time time;
+--
 -- =============================================================
 
 -- =============================================================

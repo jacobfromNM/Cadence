@@ -115,6 +115,106 @@ function StudentAddForm({ classId, classes, onAdded }) {
 }
 
 // ── School location screen ────────────────────────────────────
+function ActiveHoursScreen({ school, onBack, onSaved }) {
+  const { showToast } = useToast()
+  const DAY_OPTS = [
+    { label: 'Mon', value: 1 }, { label: 'Tue', value: 2 }, { label: 'Wed', value: 3 },
+    { label: 'Thu', value: 4 }, { label: 'Fri', value: 5 }, { label: 'Sat', value: 6 }, { label: 'Sun', value: 0 },
+  ]
+  const [enabled, setEnabled] = useState(!!(school.active_start_time && school.active_end_time))
+  const [days, setDays] = useState(school.active_days ?? [1, 2, 3, 4, 5])
+  const [startTime, setStartTime] = useState(school.active_start_time?.slice(0, 5) ?? '07:30')
+  const [endTime, setEndTime] = useState(school.active_end_time?.slice(0, 5) ?? '15:30')
+  const [saving, setSaving] = useState(false)
+
+  const toggleDay = (d) =>
+    setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort((a, b) => a - b))
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const updates = enabled
+        ? { active_days: days, active_start_time: startTime, active_end_time: endTime }
+        : { active_days: days, active_start_time: null, active_end_time: null }
+      const { error } = await supabase.from('schools').update(updates).eq('id', school.id)
+      if (error) throw error
+      onSaved(updates)
+      showToast({ type: 'success', title: 'Active hours saved' })
+    } catch {
+      showToast({ type: 'error', title: 'Could not save', sub: 'Check your connection and try again.' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--blue)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>Active Hours</div>
+      </div>
+      <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          Set the days and times pickup is active. Outside these hours, staff and teachers will see an informational banner, and parents' locations will not be shared with the school.
+        </div>
+
+        <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Enable toggle */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)}
+              style={{ width: 18, height: 18, accentColor: 'var(--blue)', cursor: 'pointer' }} />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Enable active hours</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>When disabled, the app is treated as always active</div>
+            </div>
+          </label>
+
+          {enabled && (
+            <>
+              {/* Day checkboxes */}
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8 }}>Active days</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {DAY_OPTS.map(({ label, value }) => (
+                    <button key={value} onClick={() => toggleDay(value)} style={{
+                      padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: 'var(--font-body)',
+                      fontSize: 13, fontWeight: 600, border: '1.5px solid',
+                      background: days.includes(value) ? 'var(--blue)' : 'var(--bg)',
+                      borderColor: days.includes(value) ? 'var(--blue)' : 'var(--border)',
+                      color: days.includes(value) ? '#fff' : 'var(--text-2)',
+                      transition: 'all 0.15s',
+                    }}>{label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Time range */}
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Start time</label>
+                  <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', fontSize: 14, border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>End time</label>
+                  <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', fontSize: 14, border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <button onClick={handleSave} disabled={saving} style={{ background: saving ? 'var(--text-3)' : 'var(--blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, cursor: saving ? 'default' : 'pointer' }}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SchoolLocationScreen({ school, onBack, onSaved }) {
   const { showToast } = useToast()
   const [lat, setLat] = useState(school.latitude ? String(school.latitude) : '')
@@ -905,6 +1005,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, o
   if (view === 'changePin') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><ChangePinScreen school={school} onBack={() => setView('menu')} /></AppShell>
   if (view === 'analytics') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><AnalyticsScreen onBack={() => setView('menu')} /></AppShell>
   if (view === 'schoolLocation') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><SchoolLocationScreen school={school} onBack={() => setView('menu')} onSaved={(loc) => { setSchool(s => ({ ...s, ...loc })); setView('menu') }} /></AppShell>
+  if (view === 'activeHours') return <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}><ActiveHoursScreen school={school} onBack={() => setView('menu')} onSaved={(updates) => { setSchool(s => ({ ...s, ...updates })); setView('menu') }} /></AppShell>
 
   if (view === 'editClass') {
     return (
@@ -943,6 +1044,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, o
     ...(isAdmin ? [
       { icon: '📊', label: 'Daily Analytics', desc: "Today's pickups, absences, wait times, and trends", action: () => setView('analytics') },
       { icon: '📍', label: 'School Location', desc: 'Set GPS location for parent proximity alerts', action: () => setView('schoolLocation') },
+      { icon: '🕐', label: 'Active Hours', desc: 'Set the days and times pickup is active', action: () => setView('activeHours') },
       { icon: '🔑', label: 'Change PINs', desc: 'Update admin or staff access PINs', action: () => setView('changePin') },
     ] : []),
   ]
