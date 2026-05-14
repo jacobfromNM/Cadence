@@ -230,7 +230,7 @@ function ActiveHoursScreen({ school, onBack, onSaved }) {
           <button
             onClick={handleRedetect}
             style={{
-              alignSelf: 'flex-start', background: 'none', border: '1px solid var(--border)',
+              width: '50%', alignSelf: 'flex-start', background: 'none', border: '1px solid var(--border)',
               borderRadius: 8, padding: '7px 12px', fontFamily: 'var(--font-body)',
               fontSize: 12, fontWeight: 600, color: 'var(--text-2)', cursor: 'pointer',
             }}
@@ -272,60 +272,50 @@ function ActiveHoursScreen({ school, onBack, onSaved }) {
               {/* Time range */}
               <div style={{
                 display: 'flex', flexDirection: 'column', gap: 12, width: '100%',
-                minWidth: 0
+                minWidth: 0,
               }}>
                 <div style={{ minWidth: 0, width: '100%' }}>
-                  <label style={{
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'none',
-                    appearance: 'none',
-                    display: 'block',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--text-2)',
-                    marginBottom: 6
-                  }}>Start time</label>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Start time</label>
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
                     style={{
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      appearance: 'none',
+                      fontSize: 16,
                       width: '100%',
                       minWidth: 0,
                       maxWidth: '100%',
+                      display: 'block',
+                      boxSizing: 'border-box',
                       padding: '10px 12px',
-                      fontSize: 13,
                       border: '1.5px solid var(--border)',
                       borderRadius: 'var(--radius-sm)',
                       background: 'var(--bg)',
                       color: 'var(--text)',
                       fontFamily: 'var(--font-body)',
                       cursor: 'pointer',
-                      boxSizing: 'border-box',
                     }} />
                 </div>
                 <div style={{ minWidth: 0, width: '100%' }}>
-                  <label style={{
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'none',
-                    appearance: 'none',
-                    display: 'block',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--text-2)',
-                    marginBottom: 6
-                  }}>End time</label>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>End time</label>
                   <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
                     style={{
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      appearance: 'none',
+                      fontSize: 16,
                       width: '100%',
                       minWidth: 0,
                       maxWidth: '100%',
+                      display: 'block',
+                      boxSizing: 'border-box',
                       padding: '10px 12px',
-                      fontSize: 13,
                       border: '1.5px solid var(--border)',
                       borderRadius: 'var(--radius-sm)',
                       background: 'var(--bg)',
                       color: 'var(--text)',
                       fontFamily: 'var(--font-body)',
                       cursor: 'pointer',
-                      boxSizing: 'border-box',
                     }} />
                 </div>
               </div>
