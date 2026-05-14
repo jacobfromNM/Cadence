@@ -9,7 +9,6 @@ import { useToast } from '../context/ToastContext'
 import { Avatar, StatusPill, EmptyState, SectionLabel, SearchBar } from '../components/ui'
 import { AppShell } from '../components/AppShell'
 import { ParentNearbyAlert } from '../components/ParentNearbyAlert'
-import { AnnouncementBanner } from '../components/AnnouncementBanner'
 import { isWithinActiveHours } from '../lib/activeHours'
 
 // ── Shared back-button header used in drill-down screens ──────
@@ -401,7 +400,6 @@ export function StaffView({ school, loginRole, viewRole, onLogout }) {
   return (
     <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={setTab} onLogout={onLogout}>
       <ParentNearbyAlert />
-      <AnnouncementBanner />
       {school?.active_start_time && !isWithinActiveHours(school) && (
         <div style={{ background: 'var(--yellow-light)', borderBottom: '1px solid var(--yellow)', padding: '10px 16px', fontSize: 13, color: 'oklch(0.45 0.13 80)', fontWeight: 600, flexShrink: 0 }}>
           Outside active hours — pickup requests are not currently being processed
