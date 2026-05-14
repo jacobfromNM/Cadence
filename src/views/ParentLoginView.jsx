@@ -31,15 +31,15 @@ function MarkdownContent({ md }) {
   let i = 0
   const h1Style = { fontSize: 20, fontWeight: 800, color: 'var(--text)', margin: '0 0 4px' }
   const h2Style = { fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: '18px 0 6px' }
-  const pStyle  = { fontSize: 13, color: 'var(--text-2)', margin: '0 0 8px', lineHeight: 1.6 }
+  const pStyle = { fontSize: 13, color: 'var(--text-2)', margin: '0 0 8px', lineHeight: 1.6 }
   const hrStyle = { border: 'none', borderTop: '1px solid var(--border)', margin: '12px 0' }
   const liStyle = { fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }
   const ulStyle = { margin: '0 0 8px', paddingLeft: 20 }
   while (i < lines.length) {
     const line = lines[i]
-    if (line.startsWith('# '))       elements.push(<h1 key={i} style={h1Style}>{parseInline(line.slice(2))}</h1>)
+    if (line.startsWith('# ')) elements.push(<h1 key={i} style={h1Style}>{parseInline(line.slice(2))}</h1>)
     else if (line.startsWith('## ')) elements.push(<h2 key={i} style={h2Style}>{parseInline(line.slice(3))}</h2>)
-    else if (line === '---')         elements.push(<hr key={i} style={hrStyle} />)
+    else if (line === '---') elements.push(<hr key={i} style={hrStyle} />)
     else if (line.startsWith('- ')) {
       const items = []
       while (i < lines.length && lines[i].startsWith('- ')) {
@@ -81,14 +81,14 @@ const LOCKOUT_SECS = 30
 export function ParentLoginView({ onLogin, onBack }) {
   const params = new URLSearchParams(window.location.search)
 
-  const [code,        setCode]        = useState((params.get('school') || '').toUpperCase())
+  const [code, setCode] = useState((params.get('school') || '').toUpperCase())
   const [studentCode, setStudentCode] = useState(params.get('student') || '')
-  const [err,         setErr]         = useState('')
-  const [loading,     setLoading]     = useState(false)
+  const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
   const [privacyOpen, setPrivacyOpen] = useState(false)
-  const [attempts,    setAttempts]    = useState(0)
+  const [attempts, setAttempts] = useState(0)
   const [lockedUntil, setLockedUntil] = useState(null)
-  const [countdown,   setCountdown]   = useState(0)
+  const [countdown, setCountdown] = useState(0)
 
   useEffect(() => {
     if (!lockedUntil) return
@@ -112,7 +112,7 @@ export function ParentLoginView({ onLogin, onBack }) {
     if (isLocked || loading) return
     setErr('')
 
-    const upperCode  = code.trim().toUpperCase()
+    const upperCode = code.trim().toUpperCase()
     const parentCode = studentCode.trim()
 
     if (!upperCode || !parentCode) {
@@ -167,7 +167,7 @@ export function ParentLoginView({ onLogin, onBack }) {
     <>
       {privacyOpen && <PrivacyModal onClose={() => setPrivacyOpen(false)} />}
 
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px 16px' }}>
+      <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px 16px' }}>
         <div style={{ width: '100%', maxWidth: 400, background: 'var(--surface)', borderRadius: 24, border: '1px solid var(--border)', padding: '40px 32px', boxShadow: '0 8px 40px oklch(0.10 0.05 240 / 0.10)' }}>
 
           {/* Logo — identical to staff/admin login */}
@@ -256,6 +256,9 @@ export function ParentLoginView({ onLogin, onBack }) {
             </button>
           </div>
 
+        </div>
+        <div style={{ marginTop: 20, fontSize: 12, color: 'var(--text-3)', textAlign: 'center' }}>
+          Made with ♥ in New Mexico.
         </div>
       </div>
     </>

@@ -200,7 +200,7 @@ export function LoginView({ onLogin, onCreateSchool, onParentLogin }) {
     <>
       <div style={{
         minHeight: '100dvh',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         background: 'var(--bg)', padding: '24px 16px',
       }}>
         <div style={{
@@ -333,6 +333,9 @@ export function LoginView({ onLogin, onCreateSchool, onParentLogin }) {
               </button>
             </div>
           )}
+        </div>
+        <div style={{ marginTop: 20, fontSize: 12, color: 'var(--text-3)', textAlign: 'center' }}>
+          Made with ♥ in New Mexico.
         </div>
       </div>
 
