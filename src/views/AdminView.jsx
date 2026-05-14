@@ -116,24 +116,28 @@ function StudentAddForm({ classId, classes, onAdded }) {
 }
 
 const TIMEZONES = [
-  { group: 'United States', zones: [
-    { label: 'Eastern (ET) — New York, Atlanta, Miami',   value: 'America/New_York' },
-    { label: 'Central (CT) — Chicago, Dallas, Houston',   value: 'America/Chicago' },
-    { label: 'Mountain (MT) — Denver, Phoenix area',      value: 'America/Denver' },
-    { label: 'Mountain no DST — Arizona',                 value: 'America/Phoenix' },
-    { label: 'Pacific (PT) — Los Angeles, Seattle',       value: 'America/Los_Angeles' },
-    { label: 'Alaska (AKT)',                              value: 'America/Anchorage' },
-    { label: 'Hawaii (HT)',                               value: 'Pacific/Honolulu' },
-  ]},
-  { group: 'International', zones: [
-    { label: 'UTC',                                       value: 'UTC' },
-    { label: 'London (GMT/BST)',                          value: 'Europe/London' },
-    { label: 'Paris / Berlin (CET/CEST)',                 value: 'Europe/Paris' },
-    { label: 'Dubai (GST)',                               value: 'Asia/Dubai' },
-    { label: 'Singapore / Hong Kong (SGT)',               value: 'Asia/Singapore' },
-    { label: 'Tokyo (JST)',                               value: 'Asia/Tokyo' },
-    { label: 'Sydney (AEST/AEDT)',                        value: 'Australia/Sydney' },
-  ]},
+  {
+    group: 'United States', zones: [
+      { label: 'Eastern (ET) — New York, Atlanta, Miami', value: 'America/New_York' },
+      { label: 'Central (CT) — Chicago, Dallas, Houston', value: 'America/Chicago' },
+      { label: 'Mountain (MT) — Denver, Phoenix area', value: 'America/Denver' },
+      { label: 'Mountain no DST — Arizona', value: 'America/Phoenix' },
+      { label: 'Pacific (PT) — Los Angeles, Seattle', value: 'America/Los_Angeles' },
+      { label: 'Alaska (AKT)', value: 'America/Anchorage' },
+      { label: 'Hawaii (HT)', value: 'Pacific/Honolulu' },
+    ]
+  },
+  {
+    group: 'International', zones: [
+      { label: 'UTC', value: 'UTC' },
+      { label: 'London (GMT/BST)', value: 'Europe/London' },
+      { label: 'Paris / Berlin (CET/CEST)', value: 'Europe/Paris' },
+      { label: 'Dubai (GST)', value: 'Asia/Dubai' },
+      { label: 'Singapore / Hong Kong (SGT)', value: 'Asia/Singapore' },
+      { label: 'Tokyo (JST)', value: 'Asia/Tokyo' },
+      { label: 'Sydney (AEST/AEDT)', value: 'Australia/Sydney' },
+    ]
+  },
 ]
 
 // ── Active hours + timezone screen ────────────────────────────
@@ -266,13 +270,13 @@ function ActiveHoursScreen({ school, onBack, onSaved }) {
               </div>
 
               {/* Time range */}
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 120px', minWidth: 0 }}>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Start time</label>
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', fontSize: 14, border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: '1 1 120px', minWidth: 0 }}>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>End time</label>
                   <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', fontSize: 14, border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
