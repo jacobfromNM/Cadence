@@ -66,6 +66,8 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
   const [showSiblingForm, setShowSiblingForm] = useState(false)
 
   const notifiedIds = useRef(new Set())
+  // Maps student_id → absent_today row { id, student_id } for DELETE fallback
+  const absentRowsRef = useRef({})
 
   // Fetch student details whenever studentIds changes
   useEffect(() => {
@@ -122,14 +124,36 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
   useEffect(() => {
     if (!studentIds.length) return
     const today = new Date().toISOString().slice(0, 10)
-    supabase.from('absent_today').select('student_id').in('student_id', studentIds).eq('date', today)
-      .then(({ data }) => { if (data) setAbsentIds(new Set(data.map(r => r.student_id))) })
+    // Select id too so the DELETE handler can fall back to id-based lookup
+    // when REPLICA IDENTITY FULL is not set on absent_today.
+    supabase.from('absent_today').select('id, student_id').in('student_id', studentIds).eq('date', today)
+      .then(({ data }) => {
+        if (!data) return
+        const rowMap = {}
+        data.forEach(r => { rowMap[r.student_id] = r })
+        absentRowsRef.current = rowMap
+        setAbsentIds(new Set(data.map(r => r.student_id)))
+      })
 
     const channel = supabase.channel(`parent_absent:${school.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'absent_today', filter: `school_id=eq.${school.id}` },
-        ({ new: row }) => { if (studentIds.includes(row.student_id)) setAbsentIds(prev => new Set([...prev, row.student_id])) })
+        ({ new: row }) => {
+          if (!studentIds.includes(row.student_id)) return
+          absentRowsRef.current[row.student_id] = row
+          setAbsentIds(prev => new Set([...prev, row.student_id]))
+        })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'absent_today', filter: `school_id=eq.${school.id}` },
-        ({ old: row }) => { if (studentIds.includes(row.student_id)) setAbsentIds(prev => { const n = new Set(prev); n.delete(row.student_id); return n }) })
+        ({ old: row }) => {
+          // With REPLICA IDENTITY FULL row.student_id is populated; otherwise
+          // fall back to scanning our local ref by primary key id.
+          const studentId = row.student_id
+            || Object.keys(absentRowsRef.current).find(
+                sid => absentRowsRef.current[sid]?.id === row.id
+               )
+          if (!studentId || !studentIds.includes(studentId)) return
+          delete absentRowsRef.current[studentId]
+          setAbsentIds(prev => { const n = new Set(prev); n.delete(studentId); return n })
+        })
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [studentIds, school.id])
@@ -242,12 +266,18 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
   const handleMarkAbsent = async (studentId) => {
     const today = new Date().toISOString().slice(0, 10)
     setAbsentIds(prev => new Set([...prev, studentId]))
-    await supabase.from('absent_today').upsert({ student_id: studentId, school_id: school.id, date: today })
+    const { data } = await supabase
+      .from('absent_today')
+      .upsert({ student_id: studentId, school_id: school.id, date: today })
+      .select()
+      .single()
+    if (data) absentRowsRef.current[studentId] = data
   }
 
   const handleMarkPresent = async (studentId) => {
     const today = new Date().toISOString().slice(0, 10)
     setAbsentIds(prev => { const n = new Set(prev); n.delete(studentId); return n })
+    delete absentRowsRef.current[studentId]
     await supabase.from('absent_today').delete().eq('student_id', studentId).eq('date', today)
   }
 
