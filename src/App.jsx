@@ -103,6 +103,7 @@ function InnerApp() {
         code:            newSchool.code,
         staff_pin_hash:  staffPin,
         admin_pin_hash:  adminPin,
+        timezone:        newSchool.timezone,
       })
       .select()
       .single()

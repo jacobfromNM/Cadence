@@ -22,6 +22,12 @@ function deriveCode(name) {
     .slice(0, 15) || ''
 }
 
+// Detect the admin's device timezone once on mount — used as the school's
+// default timezone so active-hours checks are correct from day one.
+function detectTimezone() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return 'America/Denver' }
+}
+
 export function SetupView({ onComplete, onBack }) {
   const [step, setStep]       = useState(0)
   const [err,  setErr]        = useState('')
@@ -30,6 +36,8 @@ export function SetupView({ onComplete, onBack }) {
   const [schoolName, setSchoolName] = useState('')
   const [schoolCode, setSchoolCode] = useState('')
   const codeWasEdited = useRef(false)
+  // Captured once — admin is at the school, so device TZ = school TZ
+  const detectedTimezone = useRef(detectTimezone())
 
   const [adminPin,        setAdminPin]        = useState('')
   const [adminPinConfirm, setAdminPinConfirm] = useState('')
@@ -79,6 +87,7 @@ export function SetupView({ onComplete, onBack }) {
           code: schoolCode,
           staff_pin_hash: hashedStaffPin,
           admin_pin_hash: hashedAdminPin,
+          timezone: detectedTimezone.current,
         }
         const result = await onComplete({ staffPin: hashedStaffPin, adminPin: hashedAdminPin, school })
         // onComplete returns { error } if something went wrong (e.g. duplicate code)

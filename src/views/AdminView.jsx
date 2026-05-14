@@ -115,7 +115,28 @@ function StudentAddForm({ classId, classes, onAdded }) {
   )
 }
 
-// ── School location screen ────────────────────────────────────
+const TIMEZONES = [
+  { group: 'United States', zones: [
+    { label: 'Eastern (ET) — New York, Atlanta, Miami',   value: 'America/New_York' },
+    { label: 'Central (CT) — Chicago, Dallas, Houston',   value: 'America/Chicago' },
+    { label: 'Mountain (MT) — Denver, Phoenix area',      value: 'America/Denver' },
+    { label: 'Mountain no DST — Arizona',                 value: 'America/Phoenix' },
+    { label: 'Pacific (PT) — Los Angeles, Seattle',       value: 'America/Los_Angeles' },
+    { label: 'Alaska (AKT)',                              value: 'America/Anchorage' },
+    { label: 'Hawaii (HT)',                               value: 'Pacific/Honolulu' },
+  ]},
+  { group: 'International', zones: [
+    { label: 'UTC',                                       value: 'UTC' },
+    { label: 'London (GMT/BST)',                          value: 'Europe/London' },
+    { label: 'Paris / Berlin (CET/CEST)',                 value: 'Europe/Paris' },
+    { label: 'Dubai (GST)',                               value: 'Asia/Dubai' },
+    { label: 'Singapore / Hong Kong (SGT)',               value: 'Asia/Singapore' },
+    { label: 'Tokyo (JST)',                               value: 'Asia/Tokyo' },
+    { label: 'Sydney (AEST/AEDT)',                        value: 'Australia/Sydney' },
+  ]},
+]
+
+// ── Active hours + timezone screen ────────────────────────────
 function ActiveHoursScreen({ school, onBack, onSaved }) {
   const { showToast } = useToast()
   const DAY_OPTS = [
@@ -126,21 +147,32 @@ function ActiveHoursScreen({ school, onBack, onSaved }) {
   const [days, setDays] = useState(school.active_days ?? [1, 2, 3, 4, 5])
   const [startTime, setStartTime] = useState(school.active_start_time?.slice(0, 5) ?? '07:30')
   const [endTime, setEndTime] = useState(school.active_end_time?.slice(0, 5) ?? '15:30')
+  const [timezone, setTimezone] = useState(school.timezone ?? 'America/Denver')
   const [saving, setSaving] = useState(false)
 
   const toggleDay = (d) =>
     setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort((a, b) => a - b))
 
+  const handleRedetect = () => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      setTimezone(tz)
+      showToast({ type: 'success', title: 'Timezone updated', sub: tz })
+    } catch {
+      showToast({ type: 'error', title: 'Could not detect timezone' })
+    }
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
       const updates = enabled
-        ? { active_days: days, active_start_time: startTime, active_end_time: endTime }
-        : { active_days: days, active_start_time: null, active_end_time: null }
+        ? { active_days: days, active_start_time: startTime, active_end_time: endTime, timezone }
+        : { active_days: days, active_start_time: null, active_end_time: null, timezone }
       const { error } = await supabase.from('schools').update(updates).eq('id', school.id)
       if (error) throw error
       onSaved(updates)
-      showToast({ type: 'success', title: 'Active hours saved' })
+      showToast({ type: 'success', title: 'Settings saved' })
     } catch {
       showToast({ type: 'error', title: 'Could not save', sub: 'Check your connection and try again.' })
     } finally {
@@ -159,6 +191,48 @@ function ActiveHoursScreen({ school, onBack, onSaved }) {
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.5 }}>
           Set the days and times pickup is active. Outside these hours, staff and teachers will see an informational banner, and parents' locations will not be shared with the school.
+        </div>
+
+        {/* Timezone */}
+        <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>School Timezone</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.4 }}>
+              All active-hours checks use this timezone, not the viewer's device clock.
+            </div>
+          </div>
+          <select
+            value={timezone}
+            onChange={e => setTimezone(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 12px', fontSize: 13,
+              border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg)', color: 'var(--text)',
+              fontFamily: 'var(--font-body)', cursor: 'pointer', boxSizing: 'border-box',
+            }}
+          >
+            {TIMEZONES.map(({ group, zones }) => (
+              <optgroup key={group} label={group}>
+                {zones.map(({ label, value }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </optgroup>
+            ))}
+            {/* Show the raw IANA value if it isn't in the list (e.g. auto-detected exotic zone) */}
+            {!TIMEZONES.flatMap(g => g.zones).some(z => z.value === timezone) && (
+              <option value={timezone}>{timezone}</option>
+            )}
+          </select>
+          <button
+            onClick={handleRedetect}
+            style={{
+              alignSelf: 'flex-start', background: 'none', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '7px 12px', fontFamily: 'var(--font-body)',
+              fontSize: 12, fontWeight: 600, color: 'var(--text-2)', cursor: 'pointer',
+            }}
+          >
+            📍 Re-detect from this device
+          </button>
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>

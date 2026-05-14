@@ -28,6 +28,7 @@ create table public.schools (
   active_days     integer[] default '{1,2,3,4,5}', -- days of week school is active (0=Sun…6=Sat)
   active_start_time time,                       -- window start (null = always active)
   active_end_time   time,                       -- window end   (null = always active)
+  timezone        text not null default 'America/Denver', -- IANA tz name; drives active-hours checks + nightly cron
   created_at      timestamptz default now()
 );
 
@@ -231,6 +232,11 @@ select cron.schedule(
 --       delete from public.pickup_requests where requested_at::date < current_date;
 --     $$
 --   );
+--
+-- Timezone feature (added later):
+--
+--   alter table public.schools
+--     add column if not exists timezone text not null default 'America/Denver';
 --
 -- Announcements feature (added later):
 --
