@@ -36,6 +36,9 @@ export function CadenceProvider({ children }) {
 
   // Track active Supabase channels so we can clean up on logout
   const channelsRef = useRef([])
+  // Maps student_id → absent_today row { id, student_id } so DELETE events
+  // (which only carry the primary key by default) can find the right student.
+  const absentRowsRef = useRef({})
 
   // ── Initialise for a school (called from App after login) ──────────────
   const initSchool = useCallback(async (id) => {
@@ -86,6 +89,9 @@ export function CadenceProvider({ children }) {
       pickupRes.data.forEach(p => { pickupMap[p.student_id] = p })
       setPickups(pickupMap)
 
+      const absentRowMap = {}
+      absentRes.data.forEach(r => { absentRowMap[r.student_id] = r })
+      absentRowsRef.current = absentRowMap
       setAbsent(new Set(absentRes.data.map(r => r.student_id)))
 
       // Convert parent_nearby rows into { [studentId]: row } map
@@ -112,6 +118,7 @@ export function CadenceProvider({ children }) {
     setParentNearby({})
     channelsRef.current.forEach(ch => supabase.removeChannel(ch))
     channelsRef.current = []
+    absentRowsRef.current = {}
   }, [])
 
   // ── Real-time subscriptions ────────────────────────────────────────────
@@ -147,19 +154,33 @@ export function CadenceProvider({ children }) {
       .subscribe()
 
     // absent_today — teacher marks absent, staff sees it instantly
+    //
+    // NOTE: Supabase Realtime DELETE events only carry the primary key (id) by
+    // default. Run `ALTER TABLE public.absent_today REPLICA IDENTITY FULL;` in
+    // your Supabase SQL editor so that student_id is also included. The
+    // absentRowsRef fallback below handles the case where it hasn't been run yet.
     const absentCh = supabase
       .channel(`absent:${id}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public',
         table: 'absent_today', filter: `school_id=eq.${id}`,
       }, ({ new: row }) => {
+        absentRowsRef.current[row.student_id] = row
         setAbsent(prev => { const n = new Set(prev); n.add(row.student_id); return n })
       })
       .on('postgres_changes', {
         event: 'DELETE', schema: 'public',
         table: 'absent_today', filter: `school_id=eq.${id}`,
       }, ({ old: row }) => {
-        setAbsent(prev => { const n = new Set(prev); n.delete(row.student_id); return n })
+        // With REPLICA IDENTITY FULL, row.student_id is populated directly.
+        // Without it, fall back to scanning our local ref by primary key id.
+        const studentId = row.student_id
+          || Object.keys(absentRowsRef.current).find(
+              sid => absentRowsRef.current[sid]?.id === row.id
+             )
+        if (!studentId) return
+        delete absentRowsRef.current[studentId]
+        setAbsent(prev => { const n = new Set(prev); n.delete(studentId); return n })
       })
       .subscribe()
 
@@ -427,21 +448,26 @@ export function CadenceProvider({ children }) {
     setPickups(p => { const n = { ...p }; delete n[studentId]; return n })
 
     const today = new Date().toISOString().slice(0, 10)
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('absent_today')
       .upsert(
         { student_id: studentId, school_id: student.school_id, date: today },
         { onConflict: 'student_id,date' }
       )
+      .select()
+      .single()
 
     if (error) {
       setAbsent(prev => { const n = new Set(prev); n.delete(studentId); return n })
       throw error
     }
+    // Store the row so the DELETE realtime handler can find it by id
+    if (data) absentRowsRef.current[studentId] = data
   }, [students])
 
   const markPresent = useCallback(async (studentId) => {
     setAbsent(prev => { const n = new Set(prev); n.delete(studentId); return n })
+    delete absentRowsRef.current[studentId]
 
     const today = new Date().toISOString().slice(0, 10)
     const { error } = await supabase

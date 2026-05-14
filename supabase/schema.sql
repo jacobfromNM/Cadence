@@ -148,6 +148,13 @@ alter publication supabase_realtime add table public.students;
 alter publication supabase_realtime add table public.classes;
 alter publication supabase_realtime add table public.parent_nearby;
 
+-- REPLICA IDENTITY FULL is required so that Supabase Realtime DELETE events
+-- include all columns (e.g. student_id, school_id) — not just the primary key.
+-- Without this, the school_id filter on DELETE subscriptions is silently ignored
+-- and the student_id needed to un-absent a student is missing from the payload.
+alter table public.absent_today     replica identity full;
+alter table public.pickup_requests  replica identity full;
+
 -- =============================================================
 -- Nightly cleanup (optional but recommended)
 -- Clears absent_today and completed pickup_requests each morning.
@@ -204,9 +211,14 @@ select cron.schedule(
 --
 -- Active hours feature (added later):
 --
---   alter table public.schools add column if not exists active_days integer[] default '{1,2,3,4,5}';
---   alter table public.schools add column if not exists active_start_time time;
---   alter table public.schools add column if not exists active_end_time time;
+  -- alter table public.schools add column if not exists active_days integer[] default '{1,2,3,4,5}';
+  -- alter table public.schools add column if not exists active_start_time time;
+  -- alter table public.schools add column if not exists active_end_time time;
+--
+-- Realtime DELETE fix (required for absent undo to sync across devices):
+--
+--   alter table public.absent_today    replica identity full;
+--   alter table public.pickup_requests replica identity full;
 --
 -- =============================================================
 
