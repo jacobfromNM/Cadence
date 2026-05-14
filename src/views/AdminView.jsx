@@ -10,6 +10,7 @@ import { useCadence } from '../context/CadenceContext'
 import { useToast } from '../context/ToastContext'
 import { Input, ConfirmBlock, SectionLabel } from '../components/ui'
 import { AppShell } from '../components/AppShell'
+import { AnnouncementBanner } from '../components/AnnouncementBanner'
 import { supabase } from '../lib/supabase'
 
 // ── Student add form (one-by-one or paste a list) ─────────────
@@ -1051,6 +1052,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, o
 
   return (
     <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
+      <AnnouncementBanner />
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>

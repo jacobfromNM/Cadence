@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { RoleBadge } from '../components/ui'
+import { useCadence } from '../context/CadenceContext'
 
 function RoleCard({ icon, title, desc, badge, onClick, dashed }) {
   return (
@@ -37,6 +38,7 @@ function RoleCard({ icon, title, desc, badge, onClick, dashed }) {
 
 export function RoleView({ school, loginRole, onSelect, onLogout }) {
   const isAdmin = loginRole === 'admin'
+  const { announcement } = useCadence()
 
   // Friendly greeting based on time of day
   const hour = new Date().getHours()
@@ -79,6 +81,31 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
           </button>
         </div>
 
+        {/* Announcement banner */}
+        <div style={{
+          background: announcement ? 'oklch(0.96 0.04 245)' : 'var(--surface)',
+          border: `1.5px solid ${announcement ? 'var(--blue)' : 'var(--border)'}`,
+          borderRadius: 'var(--radius)',
+          padding: '12px 14px',
+          display: 'flex', alignItems: 'flex-start', gap: 8,
+          marginBottom: 4,
+        }}>
+          <span style={{ fontSize: 14, lineHeight: '20px', flexShrink: 0 }}>📣</span>
+          <div style={{ flex: 1 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block' }}>
+              Announcement
+            </span>
+            <span style={{
+              fontSize: 13,
+              color: announcement ? 'var(--blue)' : 'var(--text-3)',
+              fontWeight: announcement ? 600 : 400,
+              lineHeight: 1.45, display: 'block', marginTop: 1,
+            }}>
+              {announcement || 'None for the day. Go out and do awesome things!'}
+            </span>
+          </div>
+        </div>
+
         {/* Role cards */}
         <RoleCard
           icon="🚗"
@@ -92,6 +119,16 @@ export function RoleView({ school, loginRole, onSelect, onLogout }) {
           desc="I'm inside waiting for pickup requests"
           onClick={() => onSelect('teacher')}
         />
+
+        {/* Messenger — admin only */}
+        {isAdmin && (
+          <RoleCard
+            icon="📣"
+            title="Messenger"
+            desc="Share school-wide pickup announcements with parents and staff"
+            onClick={() => onSelect('messenger')}
+          />
+        )}
 
         {/* School Setup — admin sees full controls, staff sees student management only */}
         <RoleCard

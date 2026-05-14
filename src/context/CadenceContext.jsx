@@ -31,6 +31,8 @@ export function CadenceProvider({ children }) {
   const [absent,        setAbsent]        = useState(new Set())
   // parentNearby: { [studentId]: parent_nearby_row } — only active (dismissed_at IS NULL) rows
   const [parentNearby,  setParentNearby]  = useState({})
+  // announcement: current school-wide message text, or null if none
+  const [announcement,  setAnnouncement]  = useState(null)
   const [loading,       setLoading]       = useState(false)
   const [error,         setError]         = useState(null)
 
@@ -50,7 +52,7 @@ export function CadenceProvider({ children }) {
       const today = new Date().toISOString().slice(0, 10)
 
       // Fetch everything for this school in parallel
-      const [classRes, studentRes, pickupRes, absentRes, nearbyRes] = await Promise.all([
+      const [classRes, studentRes, pickupRes, absentRes, nearbyRes, schoolRes] = await Promise.all([
         supabase.from('classes')
           .select('*')
           .eq('school_id', id)
@@ -73,6 +75,7 @@ export function CadenceProvider({ children }) {
           .is('dismissed_at', null)
           .is('converted_at', null)
           .gte('created_at', today + 'T00:00:00.000Z'),
+        supabase.from('schools').select('announcement').eq('id', id).single(),
       ])
 
       if (classRes.error)   throw classRes.error
@@ -98,6 +101,8 @@ export function CadenceProvider({ children }) {
       const nearbyMap = {}
       nearbyRes.data.forEach(r => { nearbyMap[r.student_id] = r })
       setParentNearby(nearbyMap)
+
+      setAnnouncement(schoolRes.data?.announcement ?? null)
     } catch (err) {
       console.error('Cadence initSchool error:', err)
       setError(err.message)
@@ -116,6 +121,7 @@ export function CadenceProvider({ children }) {
     setPickups({})
     setAbsent(new Set())
     setParentNearby({})
+    setAnnouncement(null)
     channelsRef.current.forEach(ch => supabase.removeChannel(ch))
     channelsRef.current = []
     absentRowsRef.current = {}
@@ -272,7 +278,18 @@ export function CadenceProvider({ children }) {
       }, ({ new: row }) => nearbyHandler({ new: row, old: null, eventType: 'UPDATE' }))
       .subscribe()
 
-    channelsRef.current = [pickupCh, absentCh, studentCh, classCh, nearbyCh]
+    // schools — admin updates announcement, all connected views see it instantly
+    const schoolCh = supabase
+      .channel(`school:${id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public',
+        table: 'schools', filter: `id=eq.${id}`,
+      }, ({ new: row }) => {
+        setAnnouncement(row.announcement ?? null)
+      })
+      .subscribe()
+
+    channelsRef.current = [pickupCh, absentCh, studentCh, classCh, nearbyCh, schoolCh]
   }
 
   // Clean up when the provider unmounts
@@ -611,6 +628,16 @@ export function CadenceProvider({ children }) {
     clearSchool()
   }, [schoolId, clearSchool])
 
+  const sendAnnouncement = useCallback(async (text) => {
+    const { error } = await supabase.from('schools').update({ announcement: text }).eq('id', schoolId)
+    if (!error) setAnnouncement(text)
+  }, [schoolId])
+
+  const clearAnnouncement = useCallback(async () => {
+    const { error } = await supabase.from('schools').update({ announcement: null }).eq('id', schoolId)
+    if (!error) setAnnouncement(null)
+  }, [schoolId])
+
   const updatePins = useCallback(async ({ adminPin, staffPin }) => {
     if (!schoolId) return
     const updates = {}
@@ -654,6 +681,7 @@ export function CadenceProvider({ children }) {
     <CadenceCtx.Provider value={{
       schoolId, loading, error,
       classes, students, pickups, absent, parentNearby,
+      announcement, sendAnnouncement, clearAnnouncement,
       initSchool, clearSchool,
       requestPickup, sendStudent, completePickup, cancelPickup,
       reportParentNearby, dismissParentNearby, convertParentNearby,

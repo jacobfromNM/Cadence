@@ -65,9 +65,28 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
   const [siblingLoading, setSiblingLoading] = useState(false)
   const [showSiblingForm, setShowSiblingForm] = useState(false)
 
+  const [announcement, setAnnouncement] = useState(null)
+
   const notifiedIds = useRef(new Set())
   // Maps student_id → absent_today row { id, student_id } for DELETE fallback
   const absentRowsRef = useRef({})
+
+  // Fetch current announcement + subscribe to real-time changes
+  useEffect(() => {
+    supabase.from('schools').select('announcement').eq('id', school.id).single()
+      .then(({ data }) => setAnnouncement(data?.announcement ?? null))
+
+    const channel = supabase.channel(`school_announcement:${school.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'schools',
+        filter: `id=eq.${school.id}`,
+      }, ({ new: row }) => {
+        setAnnouncement(row.announcement ?? null)
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [school.id])
 
   // Fetch student details whenever studentIds changes
   useEffect(() => {
@@ -367,6 +386,23 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
             )
           })}
         </div>
+
+        {/* School Announcements */}
+        {announcement && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>School Announcements</div>
+            <div style={{
+              background: 'oklch(0.96 0.04 245)', border: '1.5px solid var(--blue)',
+              borderRadius: 'var(--radius)', padding: '14px 16px',
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+            }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>📣</span>
+              <div style={{ fontSize: 14, color: 'var(--blue)', fontWeight: 600, lineHeight: 1.5 }}>
+                {announcement}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Add sibling */}
         {!showSiblingForm ? (

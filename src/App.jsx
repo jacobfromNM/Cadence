@@ -21,6 +21,7 @@ import { AdminView } from './views/AdminView'
 import { SetupView } from './views/SetupView'
 import { ParentLoginView } from './views/ParentLoginView'
 import { ParentView } from './views/ParentView'
+import { MessengerView } from './views/MessengerView'
 import { supabase } from './lib/supabase'
 
 // ── Inner app — needs access to CadenceProvider context ───────
@@ -216,6 +217,13 @@ function InnerApp() {
           viewRole={viewRole}
           onLogout={handleBackToRole}
           onSchoolDelete={handleLogout}
+        />
+      )}
+
+      {screen === 'messenger' && school && (
+        <MessengerView
+          school={school}
+          onLogout={handleBackToRole}
         />
       )}
     </>

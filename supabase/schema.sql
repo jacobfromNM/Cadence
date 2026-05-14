@@ -24,6 +24,7 @@ create table public.schools (
   admin_pin_hash  text not null,
   latitude        numeric,                      -- school GPS for parent geofencing
   longitude       numeric,
+  announcement    text,                         -- current school-wide announcement; null = none
   created_at      timestamptz default now()
 );
 
@@ -147,6 +148,8 @@ alter publication supabase_realtime add table public.students;
 -- classes must be in the publication so the client subscription fires
 alter publication supabase_realtime add table public.classes;
 alter publication supabase_realtime add table public.parent_nearby;
+-- schools must be in the publication so announcement changes broadcast instantly
+alter publication supabase_realtime add table public.schools;
 
 -- REPLICA IDENTITY FULL is required so that Supabase Realtime DELETE events
 -- include all columns (e.g. student_id, school_id) — not just the primary key.
@@ -214,6 +217,11 @@ select cron.schedule(
   -- alter table public.schools add column if not exists active_days integer[] default '{1,2,3,4,5}';
   -- alter table public.schools add column if not exists active_start_time time;
   -- alter table public.schools add column if not exists active_end_time time;
+--
+-- Announcements feature (added later):
+--
+--   alter table public.schools add column if not exists announcement text;
+--   alter publication supabase_realtime add table public.schools;
 --
 -- Realtime DELETE fix (required for absent undo to sync across devices):
 --
