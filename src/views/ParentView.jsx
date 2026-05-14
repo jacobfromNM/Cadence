@@ -68,6 +68,8 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
   const [announcement, setAnnouncement] = useState(null)
 
   const notifiedIds = useRef(new Set())
+  // Maps pickup_request id → student_id for DELETE fallback (REPLICA IDENTITY not FULL)
+  const pickupRowsRef = useRef({})
   // Maps student_id → absent_today row { id, student_id } for DELETE fallback
   const absentRowsRef = useRef({})
 
@@ -106,7 +108,9 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
       .then(({ data }) => {
         if (data) {
           const map = {}
-          data.forEach(p => { map[p.student_id] = p })
+          const rowMap = {}
+          data.forEach(p => { map[p.student_id] = p; rowMap[p.id] = p.student_id })
+          pickupRowsRef.current = rowMap
           setPickups(map)
         }
       })
@@ -117,22 +121,28 @@ export function ParentView({ school, initialStudentIds, onLogout }) {
         event: 'INSERT', schema: 'public', table: 'pickup_requests',
         filter: `school_id=eq.${school.id}`,
       }, ({ new: row }) => {
-        if (studentIds.includes(row.student_id))
+        if (studentIds.includes(row.student_id)) {
+          pickupRowsRef.current[row.id] = row.student_id
           setPickups(prev => ({ ...prev, [row.student_id]: row }))
+        }
       })
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'pickup_requests',
         filter: `school_id=eq.${school.id}`,
       }, ({ new: row }) => {
-        if (studentIds.includes(row.student_id))
+        if (studentIds.includes(row.student_id)) {
+          pickupRowsRef.current[row.id] = row.student_id
           setPickups(prev => ({ ...prev, [row.student_id]: row }))
+        }
       })
       .on('postgres_changes', {
         event: 'DELETE', schema: 'public', table: 'pickup_requests',
         filter: `school_id=eq.${school.id}`,
       }, ({ old: row }) => {
-        if (studentIds.includes(row.student_id))
-          setPickups(prev => { const n = { ...prev }; delete n[row.student_id]; return n })
+        const studentId = row.student_id || pickupRowsRef.current[row.id]
+        if (!studentId || !studentIds.includes(studentId)) return
+        delete pickupRowsRef.current[row.id]
+        setPickups(prev => { const n = { ...prev }; delete n[studentId]; return n })
       })
       .subscribe()
 
