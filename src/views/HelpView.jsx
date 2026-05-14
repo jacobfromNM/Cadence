@@ -14,23 +14,23 @@ const SECTIONS = [
     items: [
       {
         q: 'How do I log in?',
-        a: "Open the link your school provided (or scan the QR code). Enter your student's parent code — a short code that looks like AB123456. You'll find it on any communication from the school.",
+        a: "Open the link your school provided (or scan the QR code). Enter your student's parent code - a short code that looks like AB123456. Contact your child's teacher if you have not received this code.",
       },
       {
-        q: 'Can I add siblings?',
-        a: "Yes. After logging in, tap Add Student and enter the sibling's parent code. Both students will appear on your screen and you only need to log in once.",
+        q: 'Can I add or connect siblings?',
+        a: "Yes. After logging in, tap 'Add Student' and enter the sibling's parent code. Both students will appear on your screen and you'll only need to log in once - using either student's code.",
       },
       {
         q: 'How does location work?',
-        a: "When you tap Allow Location, Cadence watches your GPS in the background. When you're within about 400 meters of the school, staff are automatically notified that you've arrived — no tapping required.",
+        a: "When you tap 'Allow Location', the Cadence app watches your GPS in the background. When you're within ~400 meters of the school, staff are automatically notified that you've arrived - no manual tapping required.",
       },
       {
         q: "What do the pickup status labels mean?",
-        a: '"Getting ready…" means staff have seen the request and your student is being prepared. "On the way out…" means the teacher has confirmed and your student is heading to you. "Picked up!" means the pickup is complete.',
+        a: '"Getting ready…" means staff have seen the request and your student is being prepared. "On the way out…" means the teacher inside has confirmed and your student is heading to you. "Picked up!" means the pickup is complete. Pickup statuses reset before the start of the next school day.',
       },
       {
         q: 'Can I mark my child absent?',
-        a: 'Yes. Tap the Mark Absent button on your student\'s card. Staff will see the absence in their view. You can undo this any time during the same day.',
+        a: 'Yes. Tap the "Mark Absent" button on your student\'s card. Staff will see the absence in their view. You can undo this any time during the same day.',
       },
     ],
   },
@@ -50,7 +50,7 @@ const SECTIONS = [
       },
       {
         q: 'How do I see active pickups?',
-        a: 'Tap the Active tab. It shows all pickup requests in progress — requested, sent, and recently completed. A yellow badge on the tab counts pending requests.',
+        a: 'Tap the Active tab. It shows all pickup requests in progress: requested, sent, and recently completed. A yellow badge on the tab counts pending requests.',
       },
       {
         q: 'Can I see which students are absent?',
@@ -78,7 +78,7 @@ const SECTIONS = [
       },
       {
         q: 'Can I see students from other classes?',
-        a: 'No — the queue only shows requests for your assigned class. If you need to see another class, log out and re-enter as that class\'s teacher.',
+        a: 'Yes - teachers can navigate to the class list view to view requests for other classes.',
       },
     ],
   },
@@ -94,11 +94,11 @@ const SECTIONS = [
       },
       {
         q: 'Can I bulk import students?',
-        a: 'Yes. Inside a class, tap Bulk Import and paste a list of student names — one per line. All students are created at once and assigned parent codes automatically.',
+        a: 'Yes. Inside a class, tap Bulk Import and paste a list of student names - one per line. All students are created at once and assigned parent codes automatically.',
       },
       {
         q: 'How do I share parent codes with families?',
-        a: 'Each student\'s parent code is shown on their card in the Setup view. You can also generate a school-wide QR code (Settings tab) that parents scan to reach the parent login page.',
+        a: 'Each student\'s parent code is shown on their card in the Setup view, and can be shared directly with families.',
       },
       {
         q: 'How do I change PINs?',
