@@ -270,13 +270,13 @@ function ActiveHoursScreen({ school, onBack, onSaved }) {
               </div>
 
               {/* Time range */}
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 120px', minWidth: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Start time</label>
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', fontSize: 14, border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
                 </div>
-                <div style={{ flex: '1 1 120px', minWidth: 0 }}>
+                <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>End time</label>
                   <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', fontSize: 14, border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
