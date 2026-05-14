@@ -1167,7 +1167,7 @@ export function AdminView({ school: schoolProp, loginRole, viewRole, onLogout, o
 
   return (
     <AppShell school={school} loginRole={loginRole} viewRole={viewRole} tab={tab} onTabChange={() => { }} onLogout={onLogout}>
-      <AnnouncementBanner />
+      {/* <AnnouncementBanner /> */}
       <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
