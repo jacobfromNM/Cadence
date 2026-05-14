@@ -25,6 +25,9 @@ create table public.schools (
   latitude        numeric,                      -- school GPS for parent geofencing
   longitude       numeric,
   announcement    text,                         -- current school-wide announcement; null = none
+  active_days     integer[] default '{1,2,3,4,5}', -- days of week school is active (0=Sun…6=Sat)
+  active_start_time time,                       -- window start (null = always active)
+  active_end_time   time,                       -- window end   (null = always active)
   created_at      timestamptz default now()
 );
 
@@ -167,11 +170,10 @@ alter table public.pickup_requests  replica identity full;
 
 select cron.schedule(
   'clear-daily-pickup-data',
-  '0 6 * * *',  -- 6:00 AM UTC = midnight Mountain Time (adjust if needed)
+  '0 6 * * *',  -- 6:00 AM UTC — see timezone note below
   $$
     delete from public.absent_today where date < current_date;
-    delete from public.pickup_requests
-      where completed_at < now() - interval '18 hours';
+    delete from public.pickup_requests where requested_at::date < current_date;
   $$
 );
 
@@ -214,9 +216,21 @@ select cron.schedule(
 --
 -- Active hours feature (added later):
 --
-  -- alter table public.schools add column if not exists active_days integer[] default '{1,2,3,4,5}';
-  -- alter table public.schools add column if not exists active_start_time time;
-  -- alter table public.schools add column if not exists active_end_time time;
+--   alter table public.schools add column if not exists active_days integer[] default '{1,2,3,4,5}';
+--   alter table public.schools add column if not exists active_start_time time;
+--   alter table public.schools add column if not exists active_end_time time;
+--
+-- Cron fix — cleans up all stale pickup_requests (not just completed ones):
+--
+--   select cron.unschedule('clear-daily-pickup-data');
+--   select cron.schedule(
+--     'clear-daily-pickup-data',
+--     '0 6 * * *',
+--     $$
+--       delete from public.absent_today where date < current_date;
+--       delete from public.pickup_requests where requested_at::date < current_date;
+--     $$
+--   );
 --
 -- Announcements feature (added later):
 --
