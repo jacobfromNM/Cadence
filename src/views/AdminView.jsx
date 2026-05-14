@@ -281,17 +281,51 @@ function ParentCodeModal({ student, school, onClose }) {
 
 // ── Edit class screen ─────────────────────────────────────────
 function EditClassScreen({ cls, school, onBack, isAdmin }) {
-  const { classes, studentsInClass, editClass, deleteClass, editStudent, deleteStudent } = useCadence()
+  const { classes, students, studentsInClass, editClass, deleteClass, editStudent, deleteStudent } = useCadence()
   const { showToast } = useToast()
   const [code, setCode] = useState(cls.code)
   const [teacher, setTeacher] = useState(cls.teacher_name)
   const [saved, setSaved] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
+  const [codeError, setCodeError] = useState(null)
   const [confirmDeleteStudent, setConfirmDeleteStu] = useState(null)
   const [shareStudent, setShareStudent] = useState(null)
   const [, refresh] = useState(0)
   const myStudents = studentsInClass(cls.id)
+
+  const handleStudentSave = async () => {
+    const trimmedCode = editingStudent.parentCode.trim().toUpperCase()
+    const CODE_RE = /^[A-Z]{2}[0-9]{6}$/
+
+    if (!CODE_RE.test(trimmedCode)) {
+      setCodeError('Code must be 2 letters followed by 6 digits (e.g. JO123456).')
+      return
+    }
+
+    const isDuplicate = students.some(
+      s => s.parent_code === trimmedCode && s.id !== editingStudent.id
+    )
+    if (isDuplicate) {
+      setCodeError('This code is already used by another student in this school.')
+      return
+    }
+
+    setCodeError(null)
+    try {
+      await editStudent(editingStudent.id, {
+        name: editingStudent.name,
+        parent_code: trimmedCode,
+      })
+      setEditingStudent(null)
+    } catch (e) {
+      if (e?.message?.includes('unique') || e?.code === '23505') {
+        setCodeError('This code is already in use. Please choose another.')
+      } else {
+        showToast({ type: 'error', title: 'Could not save student', sub: 'Check your connection and try again.' })
+      }
+    }
+  }
 
   const handleSave = () => {
     editClass(cls.id, { code: code.toUpperCase(), teacher_name: teacher })
@@ -344,11 +378,40 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
           {myStudents.map(s => (
             <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
               {editingStudent?.id === s.id ? (
-                <>
-                  <Input value={editingStudent.name} onChange={e => setEditingStudent(p => ({ ...p, name: e.target.value }))} style={{ flex: 1, padding: '7px 10px', fontSize: 14 }} autoFocus />
-                  <button onClick={() => { editStudent(s.id, { name: editingStudent.name }); setEditingStudent(null) }} style={{ background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 12px', fontSize: 14, cursor: 'pointer' }}>✓</button>
-                  <button onClick={() => setEditingStudent(null)} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontSize: 14, cursor: 'pointer', color: 'var(--text-2)' }}>✕</button>
-                </>
+                <div style={{ flex: 1, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <Input
+                      value={editingStudent.name}
+                      onChange={e => setEditingStudent(p => ({ ...p, name: e.target.value }))}
+                      style={{ padding: '7px 10px', fontSize: 14 }}
+                      autoFocus
+                      placeholder="Student name"
+                    />
+                    <Input
+                      mono
+                      value={editingStudent.parentCode}
+                      onChange={e => {
+                        setCodeError(null)
+                        setEditingStudent(p => ({ ...p, parentCode: e.target.value.toUpperCase() }))
+                      }}
+                      style={{ padding: '7px 10px', fontSize: 14 }}
+                      maxLength={8}
+                      placeholder="AB123456"
+                    />
+                    {codeError && (
+                      <div style={{ fontSize: 12, color: 'var(--red)', lineHeight: 1.4 }}>{codeError}</div>
+                    )}
+                    {editingStudent.parentCode.trim().toUpperCase() !== editingStudent.originalParentCode && (
+                      <div style={{ fontSize: 12, color: 'oklch(0.45 0.13 80)', lineHeight: 1.4, background: 'var(--yellow-light)', borderRadius: 6, padding: '6px 8px' }}>
+                        Changing this code will invalidate existing parent share links and logins for this student.
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+                    <button onClick={handleStudentSave} style={{ background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 12px', fontSize: 14, cursor: 'pointer' }}>✓</button>
+                    <button onClick={() => { setCodeError(null); setEditingStudent(null) }} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontSize: 14, cursor: 'pointer', color: 'var(--text-2)' }}>✕</button>
+                  </div>
+                </div>
               ) : (
                 <>
                   <div style={{ flex: 1 }}>
@@ -362,7 +425,7 @@ function EditClassScreen({ cls, school, onBack, isAdmin }) {
                       Parent Link
                     </button>
                   )}
-                  <button onClick={() => setEditingStudent({ id: s.id, name: s.name })} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--text-2)', fontFamily: 'var(--font-body)' }}>Edit</button>
+                  <button onClick={() => { setCodeError(null); setEditingStudent({ id: s.id, name: s.name, parentCode: s.parent_code ?? '', originalParentCode: s.parent_code ?? '' }) }} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--text-2)', fontFamily: 'var(--font-body)' }}>Edit</button>
                   {confirmDeleteStudent === s.id ? (
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button onClick={() => { deleteStudent(s.id); setConfirmDeleteStu(null); refresh(r => r + 1); showToast({ type: 'info', title: 'Student removed' }) }} style={{ background: 'var(--red)', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>Delete</button>
